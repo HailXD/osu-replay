@@ -72,9 +72,6 @@ def main() -> int:
         fail("A score URL or score ID is required.")
 
     score_id = parse_score_id(score_input)
-    skin_input = input(
-        f"Optional local skin folder path (blank = {DEFAULT_SKIN_INPUT}): "
-    ).strip()
 
     client_id, client_secret = load_osu_credentials()
     access_token = fetch_access_token(client_id, client_secret)
@@ -91,7 +88,7 @@ def main() -> int:
 
     danser_install = ensure_danser_install()
     encoder = choose_encoder(danser_install.ffmpeg)
-    skin_path = parse_skin_path(skin_input)
+    skin_path = parse_skin_path("")
     settings_path = write_danser_settings(danser_install.directory, encoder, skin_path)
     output_stem = build_output_stem(score)
     output_path = OUTPUT_DIR / f"{output_stem}.{DEFAULT_CONTAINER}"

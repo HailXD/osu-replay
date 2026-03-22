@@ -1,7 +1,7 @@
 {
 	"General": {
 		"OsuSongsDir": "C:\\Users\\jyeal\\Documents\\programming-related\\osu-replay\\work\\songs",
-		"OsuSkinsDir": "C:\\Users\\jyeal\\Documents\\programming-related\\osu-replay\\vendor\\danser\\0.11.0\\skins",
+		"OsuSkinsDir": "C:\\Users\\jyeal\\Documents\\programming-related\\osu-replay\\skin",
 		"OsuReplaysDir": "C:\\Users\\jyeal\\Documents\\programming-related\\osu-replay\\work\\replays",
 		"DiscordPresenceOn": false,
 		"UnpackOszFiles": true,
@@ -256,12 +256,12 @@
 		"LazerClassicScore": false
 	},
 	"Skin": {
-		"CurrentSkin": "default",
+		"CurrentSkin": "DT Pastel",
 		"FallbackSkin": "default",
 		"UseColorsFromSkin": false,
 		"UseBeatmapColors": false,
 		"Cursor": {
-			"UseSkinCursor": false,
+			"UseSkinCursor": true,
 			"Scale": 1,
 			"TrailScale": 1,
 			"ForceLongTrail": false,
@@ -580,8 +580,8 @@
 		"DanserName": "danser"
 	},
 	"Recording": {
-		"FrameWidth": 1920,
-		"FrameHeight": 1080,
+		"FrameWidth": 1280,
+		"FrameHeight": 720,
 		"FPS": 60,
 		"EncodingFPSCap": 0,
 		"Encoder": "h264_nvenc",
