@@ -36,6 +36,7 @@ DEFAULT_HEIGHT = 720
 DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
+OUTPUT_METADATA_SUFFIX = ".render.json"
 EXTRACT_CACHE_NAME = ".extract-cache.json"
 FAILED_LOG_TAIL_LINES = 40
 RULESET_BY_ID = {
@@ -83,14 +84,20 @@ def main() -> int:
     score = parse_score_info(score_payload, score_id)
     ensure_supported_mode(score)
 
-    replay_path = download_replay(access_token, score)
-    beatmap_archive_path = download_beatmap_archive(score)
-    extract_beatmap_archive(beatmap_archive_path, score)
-
     danser_install = prepare_danser_runtime(ensure_danser_install())
     encoder = choose_encoder(danser_install.ffmpeg)
     skin_path = parse_skin_path("")
     settings_path = write_danser_settings(danser_install.directory, encoder, skin_path)
+    render_metadata = build_render_metadata(score, danser_install, settings_path)
+    existing_output = find_existing_render(score, render_metadata)
+    if existing_output is not None:
+        print(f"Replay already rendered with identical settings: {existing_output}")
+        return 0
+
+    replay_path = download_replay(access_token, score)
+    beatmap_archive_path = download_beatmap_archive(score)
+    extract_beatmap_archive(beatmap_archive_path, score)
+
     output_stem = build_output_stem(score)
     output_path = OUTPUT_DIR / f"{output_stem}.{DEFAULT_CONTAINER}"
 
@@ -105,6 +112,7 @@ def main() -> int:
     if not output_path.exists():
         fail(f"Danser finished but the output file was not created: {output_path}")
 
+    write_render_metadata(output_path, render_metadata)
     print(f"Replay saved to: {output_path}")
     return 0
 
@@ -495,6 +503,50 @@ def build_output_stem(score: ScoreInfo) -> str:
         candidate = f"{base}-{suffix}"
         suffix += 1
     return candidate
+
+
+def build_render_metadata(score: ScoreInfo, danser_install: DanserInstall, settings_path: Path) -> dict[str, Any]:
+    settings_payload = json.loads(settings_path.read_text(encoding="utf-8"))
+    if not isinstance(settings_payload, dict):
+        fail(f"Expected settings JSON object in {settings_path}")
+
+    return {
+        "score_id": score.score_id,
+        "danser_version": danser_install.version,
+        "settings": settings_payload,
+    }
+
+
+def find_existing_render(score: ScoreInfo, render_metadata: dict[str, Any]) -> Path | None:
+    score_marker = f"[{score.score_id}]"
+    for output_path in OUTPUT_DIR.glob(f"*.{DEFAULT_CONTAINER}"):
+        if score_marker not in output_path.stem or not is_cached_file(output_path):
+            continue
+        if read_render_metadata(output_path) == render_metadata:
+            return output_path
+    return None
+
+
+def write_render_metadata(output_path: Path, render_metadata: dict[str, Any]) -> None:
+    metadata_path = get_render_metadata_path(output_path)
+    metadata_path.write_text(json.dumps(render_metadata, indent=2), encoding="utf-8")
+
+
+def read_render_metadata(output_path: Path) -> dict[str, Any] | None:
+    metadata_path = get_render_metadata_path(output_path)
+    if not metadata_path.exists():
+        return None
+
+    try:
+        payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    return payload if isinstance(payload, dict) else None
+
+
+def get_render_metadata_path(output_path: Path) -> Path:
+    return output_path.with_suffix(output_path.suffix + OUTPUT_METADATA_SUFFIX)
 
 
 def render_replay(
