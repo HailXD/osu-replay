@@ -34,7 +34,7 @@ DEFAULT_WIDTH = 1280
 DEFAULT_HEIGHT = 720
 DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
-DEFAULT_SKIN_INPUT = ""
+DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 EXTRACT_CACHE_NAME = ".extract-cache.json"
 FAILED_LOG_TAIL_LINES = 40
 RULESET_BY_ID = {
@@ -72,7 +72,9 @@ def main() -> int:
         fail("A score URL or score ID is required.")
 
     score_id = parse_score_id(score_input)
-    skin_input = input("Optional local skin folder path (blank = default): ").strip()
+    skin_input = input(
+        f"Optional local skin folder path (blank = {DEFAULT_SKIN_INPUT}): "
+    ).strip()
 
     client_id, client_secret = load_osu_credentials()
     access_token = fetch_access_token(client_id, client_secret)
@@ -394,10 +396,11 @@ def choose_encoder(ffmpeg_path: Path | None) -> dict[str, Any]:
 
 
 def parse_skin_path(raw_value: str) -> Path | None:
-    if not raw_value:
+    candidate_value = raw_value or DEFAULT_SKIN_INPUT
+    if not candidate_value:
         return None
 
-    candidate = Path(raw_value).expanduser()
+    candidate = Path(candidate_value).expanduser()
     if not candidate.is_absolute():
         candidate = (ROOT_DIR / candidate).resolve()
     if not candidate.exists() or not candidate.is_dir():
@@ -424,6 +427,14 @@ def write_danser_settings(danser_directory: Path, encoder: dict[str, Any], skin_
         "FallbackSkin": "default",
         "UseColorsFromSkin": False,
         "UseBeatmapColors": False,
+        "Cursor": {
+            "UseSkinCursor": skin_path is not None,
+            "Scale": 1,
+            "TrailScale": 1,
+            "ForceLongTrail": False,
+            "LongTrailLength": 2048,
+            "LongTrailDensity": 1,
+        },
     }
 
     recording = {
