@@ -1,0 +1,213 @@
+2026/03/22 22:19:26 -------------------------------------------------------------------
+2026/03/22 22:19:26 danser-go version: 0.11.0
+2026/03/22 22:19:26 Build commit hash: 8331b0ffb841cc9e0f5e6b756bcf2bba2a9465c0
+2026/03/22 22:19:26 Ran using: [C:\Users\jyeal\Documents\programming-related\osu-replay\vendor\danser\0.11.0\danser-cli.exe -settings=renderer -record -replay=C:\Users\jyeal\Documents\programming-related\osu-replay\work\replays\score_6400218754.osr -out=King Gnu - AIZO (TV Size) [INSANE] (HailX) [6400218754] -quickstart -preciseprogress -noupdatecheck]
+2026/03/22 22:19:26 OS:  Microsoft Windows 11 Home 10.0.26200.8037 Build 26200.8037
+2026/03/22 22:19:26 CPU: AMD Ryzen 7 9700X 8-Core Processor, 16 cores
+2026/03/22 22:19:26 RAM: 31 GiB
+2026/03/22 22:19:26 -------------------------------------------------------------------
+2026/03/22 22:19:26 SettingsManager: Loading "C:\Users\jyeal\Documents\programming-related\osu-replay\vendor\danser\0.11.0\settings\renderer.json"
+2026/03/22 22:19:26 SettingsManager: "C:\Users\jyeal\Documents\programming-related\osu-replay\vendor\danser\0.11.0\settings\renderer.json" loaded!
+2026/03/22 22:19:26 SettingsManager: Saving settings to "C:\Users\jyeal\Documents\programming-related\osu-replay\vendor\danser\0.11.0\settings\renderer.json"
+2026/03/22 22:19:26 ApiConnector: Saving current settings to "C:\Users\jyeal\Documents\programming-related\osu-replay\vendor\danser\0.11.0\settings\credentials.json"
+2026/03/22 22:19:26 Current config: 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
+2026/03/22 22:19:26 DatabaseManager: Initializing database...
+2026/03/22 22:19:26 DatabaseManager: Database schema version: 20220622
+2026/03/22 22:19:26 DatabaseManager: Database data version: 20220622
+2026/03/22 22:19:26 DatabaseManager: Scanning "C:\Users\jyeal\Documents\programming-related\osu-replay\work\songs" for .osu files...
+2026/03/22 22:19:26 DatabaseManager: Scan complete. Found 7 files.
+2026/03/22 22:19:26 DatabaseManager: Comparing files with database...
+2026/03/22 22:19:26 DatabaseManager: Compare complete.
+2026/03/22 22:19:26 DatabaseManager: Starting import of 7 maps. It may take up to several minutes...
+2026/03/22 22:19:26 DatabaseManager: Imported 7 new/updated beatmaps.
+2026/03/22 22:19:26 DatabaseManager: Loading beatmaps from database...
+2026/03/22 22:19:26 DatabaseManager: Loaded 7 total.
+2026/03/22 22:19:26 Initializing GLFW...
+2026/03/22 22:19:27 GLFW Initialized!
+2026/03/22 22:19:27 Creating window...
+2026/03/22 22:19:27 Window created!
+2026/03/22 22:19:27 Initializing OpenGL...
+2026/03/22 22:19:27 GL Vendor:     NVIDIA Corporation
+2026/03/22 22:19:27 GL Renderer:   NVIDIA GeForce RTX 5070 Ti/PCIe/SSE2
+2026/03/22 22:19:27 GL Version:    3.3.0 NVIDIA 595.79
+2026/03/22 22:19:27 GLSL Version:  3.30 NVIDIA via Cg compiler
+2026/03/22 22:19:27 GL Extensions: GL_AMD_multi_draw_indirect GL_AMD_seamless_cubemap_per_texture GL_AMD_vertex_shader_viewport_index GL_AMD_vertex_shader_layer GL_ARB_arrays_of_arrays GL_ARB_base_instance GL_ARB_bindless_texture GL_ARB_blend_func_extended GL_ARB_buffer_storage GL_ARB_clear_buffer_object GL_ARB_clear_texture GL_ARB_clip_control GL_ARB_color_buffer_float GL_ARB_compressed_texture_pixel_storage GL_ARB_conservative_depth GL_ARB_compute_shader GL_ARB_compute_variable_group_size GL_ARB_conditional_render_inverted GL_ARB_copy_buffer GL_ARB_copy_image GL_ARB_cull_distance GL_ARB_debug_output GL_ARB_depth_buffer_float GL_ARB_depth_clamp GL_ARB_depth_texture GL_ARB_derivative_control GL_ARB_direct_state_access GL_ARB_draw_buffers GL_ARB_draw_buffers_blend GL_ARB_draw_indirect GL_ARB_draw_elements_base_vertex GL_ARB_draw_instanced GL_ARB_enhanced_layouts GL_ARB_ES2_compatibility GL_ARB_ES3_compatibility GL_ARB_ES3_1_compatibility GL_ARB_ES3_2_compatibility GL_ARB_explicit_attrib_location GL_ARB_explicit_uniform_location GL_ARB_fragment_coord_conventions GL_ARB_fragment_layer_viewport GL_ARB_fragment_program GL_ARB_fragment_program_shadow GL_ARB_fragment_shader GL_ARB_fragment_shader_interlock GL_ARB_framebuffer_no_attachments GL_ARB_framebuffer_object GL_ARB_framebuffer_sRGB GL_ARB_geometry_shader4 GL_ARB_get_program_binary GL_ARB_get_texture_sub_image GL_ARB_gl_spirv GL_ARB_gpu_shader5 GL_ARB_gpu_shader_fp64 GL_ARB_gpu_shader_int64 GL_ARB_half_float_pixel GL_ARB_half_float_vertex GL_ARB_imaging GL_ARB_indirect_parameters GL_ARB_instanced_arrays GL_ARB_internalformat_query GL_ARB_internalformat_query2 GL_ARB_invalidate_subdata GL_ARB_map_buffer_alignment GL_ARB_map_buffer_range GL_ARB_multi_bind GL_ARB_multi_draw_indirect GL_ARB_multisample GL_ARB_multitexture GL_ARB_occlusion_query GL_ARB_occlusion_query2 GL_ARB_parallel_shader_compile GL_ARB_pipeline_statistics_query GL_ARB_pixel_buffer_object GL_ARB_point_parameters GL_ARB_point_sprite GL_ARB_polygon_offset_clamp GL_ARB_post_depth_coverage GL_ARB_program_interface_query GL_ARB_provoking_vertex GL_ARB_query_buffer_object GL_ARB_robust_buffer_access_behavior GL_ARB_robustness GL_ARB_sample_locations GL_ARB_sample_shading GL_ARB_sampler_objects GL_ARB_seamless_cube_map GL_ARB_seamless_cubemap_per_texture GL_ARB_separate_shader_objects GL_ARB_shader_atomic_counter_ops GL_ARB_shader_atomic_counters GL_ARB_shader_ballot GL_ARB_shader_bit_encoding GL_ARB_shader_clock GL_ARB_shader_draw_parameters GL_ARB_shader_group_vote GL_ARB_shader_image_load_store GL_ARB_shader_image_size GL_ARB_shader_objects GL_ARB_shader_precision GL_ARB_shader_storage_buffer_object GL_ARB_shader_subroutine GL_ARB_shader_texture_image_samples GL_ARB_shader_texture_lod GL_ARB_shading_language_100 GL_ARB_shader_viewport_layer_array GL_ARB_shading_language_420pack GL_ARB_shading_language_include GL_ARB_shading_language_packing GL_ARB_shadow GL_ARB_sparse_buffer GL_ARB_sparse_texture GL_ARB_sparse_texture2 GL_ARB_sparse_texture_clamp GL_ARB_spirv_extensions GL_ARB_stencil_texturing GL_ARB_sync GL_ARB_tessellation_shader GL_ARB_texture_barrier GL_ARB_texture_border_clamp GL_ARB_texture_buffer_object GL_ARB_texture_buffer_object_rgb32 GL_ARB_texture_buffer_range GL_ARB_texture_compression GL_ARB_texture_compression_bptc GL_ARB_texture_compression_rgtc GL_ARB_texture_cube_map GL_ARB_texture_cube_map_array GL_ARB_texture_env_add GL_ARB_texture_env_combine GL_ARB_texture_env_crossbar GL_ARB_texture_env_dot3 GL_ARB_texture_filter_anisotropic GL_ARB_texture_filter_minmax GL_ARB_texture_float GL_ARB_texture_gather GL_ARB_texture_mirror_clamp_to_edge GL_ARB_texture_mirrored_repeat GL_ARB_texture_multisample GL_ARB_texture_non_power_of_two GL_ARB_texture_query_levels GL_ARB_texture_query_lod GL_ARB_texture_rectangle GL_ARB_texture_rg GL_ARB_texture_rgb10_a2ui GL_ARB_texture_stencil8 GL_ARB_texture_storage GL_ARB_texture_storage_multisample GL_ARB_texture_swizzle GL_ARB_texture_view GL_ARB_timer_query GL_ARB_transform_feedback2 GL_ARB_transform_feedback3 GL_ARB_transform_feedback_instanced GL_ARB_transform_feedback_overflow_query GL_ARB_transpose_matrix GL_ARB_uniform_buffer_object GL_ARB_vertex_array_bgra GL_ARB_vertex_array_object GL_ARB_vertex_attrib_64bit GL_ARB_vertex_attrib_binding GL_ARB_vertex_buffer_object GL_ARB_vertex_program GL_ARB_vertex_shader GL_ARB_vertex_type_10f_11f_11f_rev GL_ARB_vertex_type_2_10_10_10_rev GL_ARB_viewport_array GL_ARB_window_pos GL_ATI_draw_buffers GL_ATI_texture_float GL_ATI_texture_mirror_once GL_S3_s3tc GL_EXT_texture_env_add GL_EXT_abgr GL_EXT_bgra GL_EXT_bindable_uniform GL_EXT_blend_color GL_EXT_blend_equation_separate GL_EXT_blend_func_separate GL_EXT_blend_minmax GL_EXT_blend_subtract GL_EXT_compiled_vertex_array GL_EXT_Cg_shader GL_EXT_depth_bounds_test GL_EXT_direct_state_access GL_EXT_draw_buffers2 GL_EXT_draw_instanced GL_EXT_draw_range_elements GL_EXT_fog_coord GL_EXT_framebuffer_blit GL_EXT_framebuffer_multisample GL_EXTX_framebuffer_mixed_formats GL_EXT_framebuffer_multisample_blit_scaled GL_EXT_framebuffer_object GL_EXT_framebuffer_sRGB GL_EXT_geometry_shader4 GL_EXT_gpu_program_parameters GL_EXT_gpu_shader4 GL_EXT_multi_draw_arrays GL_EXT_multiview_texture_multisample GL_EXT_multiview_timer_query GL_EXT_packed_depth_stencil GL_EXT_packed_float GL_EXT_packed_pixels GL_EXT_pixel_buffer_object GL_EXT_point_parameters GL_EXT_polygon_offset_clamp GL_EXT_post_depth_coverage GL_EXT_provoking_vertex GL_EXT_raster_multisample GL_EXT_rescale_normal GL_EXT_secondary_color GL_EXT_separate_shader_objects GL_EXT_separate_specular_color GL_EXT_shader_image_load_formatted GL_EXT_shader_image_load_store GL_EXT_shader_integer_mix GL_EXT_shadow_funcs GL_EXT_sparse_texture2 GL_EXT_stencil_two_side GL_EXT_stencil_wrap GL_EXT_texture3D GL_EXT_texture_array GL_EXT_texture_buffer_object GL_EXT_texture_compression_dxt1 GL_EXT_texture_compression_latc GL_EXT_texture_compression_rgtc GL_EXT_texture_compression_s3tc GL_EXT_texture_cube_map GL_EXT_texture_edge_clamp GL_EXT_texture_env_combine GL_EXT_texture_env_dot3 GL_EXT_texture_filter_anisotropic GL_EXT_texture_filter_minmax GL_EXT_texture_integer GL_EXT_texture_lod GL_EXT_texture_lod_bias GL_EXT_texture_mirror_clamp GL_EXT_texture_object GL_EXT_texture_shadow_lod GL_EXT_texture_shared_exponent GL_EXT_texture_sRGB GL_EXT_texture_sRGB_R8 GL_EXT_texture_sRGB_decode GL_EXT_texture_storage GL_EXT_texture_swizzle GL_EXT_timer_query GL_EXT_transform_feedback2 GL_EXT_vertex_array GL_EXT_vertex_array_bgra GL_EXT_vertex_attrib_64bit GL_EXT_window_rectangles GL_EXT_import_sync_object GL_IBM_rasterpos_clip GL_IBM_texture_mirrored_repeat GL_KHR_context_flush_control GL_KHR_debug GL_EXT_memory_object GL_EXT_memory_object_win32 GL_NV_memory_object_sparse GL_EXT_win32_keyed_mutex GL_KHR_parallel_shader_compile GL_KHR_no_error GL_KHR_robust_buffer_access_behavior GL_KHR_robustness GL_EXT_semaphore GL_EXT_semaphore_win32 GL_NV_timeline_semaphore GL_KHR_shader_subgroup GL_KTX_buffer_region GL_NV_alpha_to_coverage_dither_control GL_NV_bindless_multi_draw_indirect GL_NV_bindless_multi_draw_indirect_count GL_NV_bindless_texture GL_NV_blend_equation_advanced GL_NV_blend_equation_advanced_coherent GL_NVX_blend_equation_advanced_multi_draw_buffers GL_NV_blend_minmax_factor GL_NV_blend_square GL_NV_clip_space_w_scaling GL_NV_command_list GL_NV_compute_program5 GL_NV_compute_shader_derivatives GL_NV_conditional_render GL_NV_conservative_raster GL_NV_conservative_raster_dilate GL_NV_conservative_raster_pre_snap GL_NV_conservative_raster_pre_snap_triangles GL_NV_conservative_raster_underestimation GL_NV_copy_depth_to_color GL_NV_copy_image GL_NV_depth_buffer_float GL_NV_depth_clamp GL_NV_draw_texture GL_NV_draw_vulkan_image GL_NV_ES1_1_compatibility GL_NV_ES3_1_compatibility GL_NV_explicit_multisample GL_NV_feature_query GL_NV_fence GL_NV_fill_rectangle GL_NV_float_buffer GL_NV_fog_distance GL_NV_fragment_coverage_to_color GL_NV_fragment_program GL_NV_fragment_program_option GL_NV_fragment_program2 GL_NV_fragment_shader_barycentric GL_NV_fragment_shader_interlock GL_NV_framebuffer_mixed_samples GL_NV_framebuffer_multisample_coverage GL_NV_geometry_shader4 GL_NV_geometry_shader_passthrough GL_NV_gpu_program4 GL_NV_internalformat_sample_query GL_NV_gpu_program4_1 GL_NV_gpu_program5 GL_NV_gpu_program5_mem_extended GL_NV_gpu_program_fp64 GL_NV_gpu_program_multiview GL_NV_gpu_shader5 GL_NV_half_float GL_NV_light_max_exponent GL_NV_memory_attachment GL_NV_mesh_shader GL_NV_multisample_coverage GL_NV_multisample_filter_hint GL_NV_occlusion_query GL_NV_packed_depth_stencil GL_NV_parameter_buffer_object GL_NV_parameter_buffer_object2 GL_NV_path_rendering GL_NV_path_rendering_shared_edge GL_NV_pixel_data_range GL_NV_point_sprite GL_NV_primitive_restart GL_NV_primitive_shading_rate GL_NV_query_resource GL_NV_query_resource_tag GL_NV_register_combiners GL_NV_register_combiners2 GL_NV_representative_fragment_test GL_NV_sample_locations GL_NV_sample_mask_override_coverage GL_NV_scissor_exclusive GL_NV_shader_atomic_counters GL_NV_shader_atomic_float GL_NV_shader_atomic_float64 GL_NV_shader_atomic_fp16_vector GL_NV_shader_atomic_int64 GL_NV_shader_buffer_load GL_NV_shader_storage_buffer_object GL_NV_shader_subgroup_partitioned GL_NV_shader_texture_footprint GL_NV_shading_rate_image GL_NV_stereo_view_rendering GL_NV_texgen_reflection GL_NV_texture_barrier GL_NV_texture_compression_vtc GL_NV_texture_dirty_tile_map GL_NV_texture_env_combine4 GL_NV_texture_multisample GL_NV_texture_rectangle GL_NV_texture_rectangle_compressed GL_NV_texture_shader GL_NV_texture_shader2 GL_NV_texture_shader3 GL_NV_transform_feedback GL_NV_transform_feedback2 GL_NV_uniform_buffer_unified_memory GL_NV_uniform_buffer_std430_layout GL_NV_vertex_array_range GL_NV_vertex_array_range2 GL_NV_vertex_attrib_integer_64bit GL_NV_vertex_buffer_unified_memory GL_NV_vertex_program GL_NV_vertex_program1_1 GL_NV_vertex_program2 GL_NV_vertex_program2_option GL_NV_vertex_program3 GL_NV_viewport_array2 GL_NV_viewport_swizzle GL_NVX_conditional_render GL_NVX_linked_gpu_multicast GL_NV_gpu_multicast GL_NVX_gpu_multicast2 GL_NVX_progress_fence GL_NVX_gpu_memory_info GL_NVX_multigpu_info GL_NVX_nvenc_interop GL_NV_shader_thread_group GL_NV_shader_thread_shuffle GL_KHR_blend_equation_advanced GL_KHR_blend_equation_advanced_coherent GL_OVR_multiview GL_OVR_multiview2 GL_SGIS_generate_mipmap GL_SGIS_texture_lod GL_SGIX_depth_texture GL_SGIX_shadow GL_SUN_slice_accum GL_WIN_swap_hint WGL_EXT_swap_control 
+2026/03/22 22:19:27 OpenGL initialized!
+2026/03/22 22:19:27 Quicksand Bold loaded!
+2026/03/22 22:19:27 Initializing BASS...
+2026/03/22 22:19:27 BASS Initialized!
+2026/03/22 22:19:27 BASS Version:        2.4.17.41
+2026/03/22 22:19:27 BASS FX Version:     2.4.12.14
+2026/03/22 22:19:27 BASS Mix Version:    2.4.12.8
+2026/03/22 22:19:27 SkinManager: Skin "default" loaded.
+2026/03/22 22:19:27 Loading texture into atlas: assets/textures/cursor.png
+2026/03/22 22:19:27 Loading texture into atlas: assets/textures/cursor-top.png
+2026/03/22 22:19:27 Loading texture into atlas: assets/default-skin/hit50.png
+2026/03/22 22:19:27 Loading texture into atlas: assets/default-skin/hit100.png
+2026/03/22 22:19:27 Loading texture into atlas: assets/textures/triangle.png
+2026/03/22 22:19:27 Loading texture into atlas: assets/textures/triangle-shadow.png
+2026/03/22 22:19:27 Loading texture into atlas: assets/textures/triangle-small.png
+2026/03/22 22:19:27 Loading texture into atlas: assets/textures/cross.png
+2026/03/22 22:19:27 Loading texture: assets/textures/cursortrail.png
+2026/03/22 22:19:27 Playing: King Gnu - AIZO (TV Size) [INSANE]
+2026/03/22 22:19:27 Audio track: audio.ogg
+2026/03/22 22:19:27 Loading texture into atlas: assets/textures/warning.png
+2026/03/22 22:19:27 Trying to load storyboard from:  C:\Users\jyeal\Documents\programming-related\osu-replay\work\songs\2490388 King Gnu - AIZO (TV Size)\King Gnu - AIZO (TV Size) (Flins) [INSANE].osu
+2026/03/22 22:19:27 Storyboard not found!
+2026/03/22 22:19:27 Loading:  C:\Users\jyeal\Documents\programming-related\osu-replay\work\replays\score_6400218754.osr
+2026/03/22 22:19:27 Loading replay for "HailX":
+2026/03/22 22:19:27 	Mods: HDLZ
+2026/03/22 22:19:27 	Median cv frametime: 17.00ms
+2026/03/22 22:19:27 	Replay duration: 89962ms
+2026/03/22 22:19:27 	Expected score: 751295
+2026/03/22 22:19:27 	Replay loaded!
+2026/03/22 22:19:27 Creating osu! ruleset...
+2026/03/22 22:19:27 Using pp calc version 2025-03-06: https://osu.ppy.sh/home/news/2025-03-06-performance-points-star-rating-updates
+2026/03/22 22:19:27 Calculating step SR for mods: NM
+2026/03/22 22:19:27 Calculations finished! Took  3ms
+2026/03/22 22:19:27 Stars:
+2026/03/22 22:19:27 	Aim:   2.2694129919785366
+2026/03/22 22:19:27 	Speed: 2.0030564315396338
+2026/03/22 22:19:27 	Total: 4.496639881958049
+2026/03/22 22:19:27 SS PP:
+2026/03/22 22:19:27 	Aim:   50.7101637424875
+2026/03/22 22:19:27 	Tap:   35.55159507537882
+2026/03/22 22:19:27 	Acc:   63.71928938757705
+2026/03/22 22:19:27 	Total: 156.5056723707354
+2026/03/22 22:19:27 Calculating HP rates for "HailX"...
+2026/03/22 22:19:27 	Passive drain rate: 0.0762939453125
+2026/03/22 22:19:28 Ubuntu Regular loaded!
+2026/03/22 22:19:28 Error connecting to osu!api: oauth2: "invalid_request" "The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed."
+2026/03/22 22:19:28 Creating HitObject container...
+2026/03/22 22:19:28 Container created.
+2026/03/22 22:19:28 SkinManager: Texture uploaded as single texture: cursor-ripple.png
+2026/03/22 22:19:28 SkinManager: Texture uploaded as single texture: scorebar-bg.png
+2026/03/22 22:19:28 SkinManager: Texture uploaded as single texture: menu-button-background.png
+2026/03/22 22:19:28 FFmpeg exec location: C:\Users\jyeal\Documents\programming-related\osu-replay\vendor\danser\0.11.0\ffmpeg\ffmpeg.exe
+2026/03/22 22:19:28 Starting encoding!
+2026/03/22 22:19:28 Running ffmpeg with options: [-y -an -f rawvideo -c:v rawvideo -s 1920x1080 -pix_fmt yuv420p -r 60 -color_range 1 -colorspace 1 -color_trc 1 -color_primaries 1 -i - -c:v h264_nvenc -color_range 1 -colorspace 1 -color_trc 1 -color_primaries 1 -movflags +write_colr -rc vbr -b:v 400M -cq 20 -profile:v high -preset p7 C:\Users\jyeal\Documents\programming-related\osu-replay\output\King Gnu - AIZO (TV Size) [INSANE] (HailX) [6400218754]_temp\video.mp4]
+2026/03/22 22:19:28 Running ffmpeg with options: [-y -f f32le -acodec pcm_f32le -ar 48000 -ac 2 -i - -nostats -vn -c:a aac -strict -2 -b:a 192k C:\Users\jyeal\Documents\programming-related\osu-replay\output\King Gnu - AIZO (TV Size) [INSANE] (HailX) [6400218754]_temp\audio.mp4]
+2026/03/22 22:19:28 Progress: 0%, Speed: 4.90x, ETA: 21s
+2026/03/22 22:19:29 Progress: 1%, Speed: 2.10x, ETA: 48s
+2026/03/22 22:19:29 Progress: 2%, Speed: 11.73x, ETA: 8s
+2026/03/22 22:19:29 Progress: 3%, Speed: 5.03x, ETA: 19s
+2026/03/22 22:19:29 Progress: 4%, Speed: 5.33x, ETA: 18s
+2026/03/22 22:19:29 Progress: 5%, Speed: 5.22x, ETA: 18s
+2026/03/22 22:19:30 Progress: 6%, Speed: 5.13x, ETA: 18s
+2026/03/22 22:19:30 Progress: 7%, Speed: 5.48x, ETA: 17s
+2026/03/22 22:19:30 Progress: 8%, Speed: 4.70x, ETA: 20s
+2026/03/22 22:19:30 Progress: 9%, Speed: 4.44x, ETA: 21s
+2026/03/22 22:19:30 Progress: 10%, Speed: 5.10x, ETA: 18s
+2026/03/22 22:19:31 Progress: 11%, Speed: 5.00x, ETA: 18s
+2026/03/22 22:19:31 Progress: 12%, Speed: 4.98x, ETA: 18s
+2026/03/22 22:19:31 Progress: 13%, Speed: 5.02x, ETA: 17s
+2026/03/22 22:19:31 Progress: 14%, Speed: 4.98x, ETA: 17s
+2026/03/22 22:19:31 Progress: 15%, Speed: 4.88x, ETA: 18s
+2026/03/22 22:19:32 Progress: 16%, Speed: 4.98x, ETA: 17s
+2026/03/22 22:19:32 Progress: 17%, Speed: 5.01x, ETA: 17s
+2026/03/22 22:19:32 Progress: 18%, Speed: 4.71x, ETA: 18s
+2026/03/22 22:19:32 Progress: 19%, Speed: 5.39x, ETA: 15s
+2026/03/22 22:19:32 Progress: 20%, Speed: 5.04x, ETA: 16s
+2026/03/22 22:19:33 Progress: 21%, Speed: 4.96x, ETA: 16s
+2026/03/22 22:19:33 Progress: 22%, Speed: 4.80x, ETA: 16s
+2026/03/22 22:19:33 Progress: 23%, Speed: 4.99x, ETA: 15s
+2026/03/22 22:19:33 Progress: 24%, Speed: 4.96x, ETA: 15s
+2026/03/22 22:19:33 Progress: 25%, Speed: 5.01x, ETA: 15s
+2026/03/22 22:19:34 Progress: 26%, Speed: 5.01x, ETA: 15s
+2026/03/22 22:19:34 Progress: 27%, Speed: 5.06x, ETA: 14s
+2026/03/22 22:19:34 Progress: 28%, Speed: 5.07x, ETA: 14s
+2026/03/22 22:19:34 Progress: 29%, Speed: 4.98x, ETA: 14s
+2026/03/22 22:19:35 Progress: 30%, Speed: 5.05x, ETA: 14s
+2026/03/22 22:19:35 Progress: 31%, Speed: 5.02x, ETA: 14s
+2026/03/22 22:19:35 Progress: 32%, Speed: 5.02x, ETA: 14s
+2026/03/22 22:19:35 Progress: 33%, Speed: 4.98x, ETA: 13s
+2026/03/22 22:19:35 Progress: 34%, Speed: 5.01x, ETA: 13s
+2026/03/22 22:19:36 Progress: 35%, Speed: 5.02x, ETA: 13s
+2026/03/22 22:19:36 Progress: 36%, Speed: 4.98x, ETA: 13s
+2026/03/22 22:19:36 Progress: 37%, Speed: 5.07x, ETA: 12s
+2026/03/22 22:19:36 Progress: 38%, Speed: 4.95x, ETA: 13s
+2026/03/22 22:19:36 Progress: 39%, Speed: 5.02x, ETA: 12s
+2026/03/22 22:19:37 Progress: 40%, Speed: 5.19x, ETA: 12s
+2026/03/22 22:19:37 Progress: 41%, Speed: 5.23x, ETA: 11s
+2026/03/22 22:19:37 Progress: 42%, Speed: 5.12x, ETA: 11s
+2026/03/22 22:19:37 Progress: 43%, Speed: 5.27x, ETA: 11s
+2026/03/22 22:19:37 Progress: 44%, Speed: 5.05x, ETA: 11s
+2026/03/22 22:19:38 Progress: 45%, Speed: 5.08x, ETA: 11s
+2026/03/22 22:19:38 Progress: 46%, Speed: 5.09x, ETA: 11s
+2026/03/22 22:19:38 Progress: 47%, Speed: 5.15x, ETA: 10s
+2026/03/22 22:19:38 Progress: 48%, Speed: 5.07x, ETA: 10s
+2026/03/22 22:19:38 Progress: 49%, Speed: 5.17x, ETA: 10s
+2026/03/22 22:19:39 Progress: 50%, Speed: 5.10x, ETA: 10s
+2026/03/22 22:19:39 Progress: 51%, Speed: 5.24x, ETA: 9s
+2026/03/22 22:19:39 Progress: 52%, Speed: 5.16x, ETA: 9s
+2026/03/22 22:19:39 Progress: 53%, Speed: 5.05x, ETA: 9s
+2026/03/22 22:19:39 Progress: 54%, Speed: 5.13x, ETA: 9s
+2026/03/22 22:19:40 Progress: 55%, Speed: 4.82x, ETA: 9s
+2026/03/22 22:19:40 Progress: 56%, Speed: 5.29x, ETA: 8s
+2026/03/22 22:19:40 Progress: 57%, Speed: 4.95x, ETA: 9s
+2026/03/22 22:19:40 Progress: 58%, Speed: 5.00x, ETA: 8s
+2026/03/22 22:19:40 Progress: 59%, Speed: 5.01x, ETA: 8s
+2026/03/22 22:19:41 Progress: 60%, Speed: 4.96x, ETA: 8s
+2026/03/22 22:19:41 Progress: 61%, Speed: 5.02x, ETA: 8s
+2026/03/22 22:19:41 Progress: 62%, Speed: 4.84x, ETA: 8s
+2026/03/22 22:19:41 Progress: 63%, Speed: 5.09x, ETA: 7s
+2026/03/22 22:19:41 Progress: 64%, Speed: 4.65x, ETA: 8s
+2026/03/22 22:19:42 Progress: 65%, Speed: 5.19x, ETA: 7s
+2026/03/22 22:19:42 Progress: 66%, Speed: 5.02x, ETA: 7s
+2026/03/22 22:19:42 Progress: 67%, Speed: 4.92x, ETA: 7s
+2026/03/22 22:19:42 Progress: 68%, Speed: 4.97x, ETA: 6s
+2026/03/22 22:19:42 Progress: 69%, Speed: 4.87x, ETA: 6s
+2026/03/22 22:19:43 Progress: 70%, Speed: 4.96x, ETA: 6s
+2026/03/22 22:19:43 Progress: 71%, Speed: 4.85x, ETA: 6s
+2026/03/22 22:19:43 Progress: 72%, Speed: 4.93x, ETA: 5s
+2026/03/22 22:19:43 Progress: 73%, Speed: 5.20x, ETA: 5s
+2026/03/22 22:19:44 Progress: 74%, Speed: 4.98x, ETA: 5s
+2026/03/22 22:19:44 Progress: 75%, Speed: 5.04x, ETA: 5s
+2026/03/22 22:19:44 Progress: 76%, Speed: 4.93x, ETA: 5s
+2026/03/22 22:19:44 Progress: 77%, Speed: 4.88x, ETA: 4s
+2026/03/22 22:19:44 Progress: 78%, Speed: 4.96x, ETA: 4s
+2026/03/22 22:19:45 Progress: 79%, Speed: 4.82x, ETA: 4s
+2026/03/22 22:19:45 Progress: 80%, Speed: 4.93x, ETA: 4s
+2026/03/22 22:19:45 Progress: 81%, Speed: 4.56x, ETA: 4s
+2026/03/22 22:19:45 Progress: 82%, Speed: 5.47x, ETA: 3s
+2026/03/22 22:19:45 Progress: 83%, Speed: 4.96x, ETA: 3s
+2026/03/22 22:19:46 Progress: 84%, Speed: 4.94x, ETA: 3s
+2026/03/22 22:19:46 Progress: 85%, Speed: 4.85x, ETA: 3s
+2026/03/22 22:19:46 Progress: 86%, Speed: 4.88x, ETA: 3s
+2026/03/22 22:19:46 Progress: 87%, Speed: 4.93x, ETA: 2s
+2026/03/22 22:19:46 Progress: 88%, Speed: 4.97x, ETA: 2s
+2026/03/22 22:19:47 Progress: 89%, Speed: 4.98x, ETA: 2s
+2026/03/22 22:19:47 Progress: 90%, Speed: 4.98x, ETA: 2s
+2026/03/22 22:19:47 Progress: 91%, Speed: 4.93x, ETA: 1s
+2026/03/22 22:19:47 Progress: 92%, Speed: 4.94x, ETA: 1s
+2026/03/22 22:19:47 Progress: 93%, Speed: 5.03x, ETA: 1s
+2026/03/22 22:19:48 +---+--------+---------+----------+-------+-----+-----+----+------+-------+-----------+------+-------+
+2026/03/22 22:19:48 | # | PLAYER |  SCORE  | ACCURACY | GRADE | 300 | 100 | 50 | MISS | COMBO | MAX COMBO | MODS |  PP   |
+2026/03/22 22:19:48 +---+--------+---------+----------+-------+-----+-----+----+------+-------+-----------+------+-------+
+2026/03/22 22:19:48 | 1 | HailX  | 765,412 |    89.55 | B     | 279 |  62 |  2 |    1 |   534 |       534 | HDLZ | 59.92 |
+2026/03/22 22:19:48 +---+--------+---------+----------+-------+-----+-----+----+------+-------+-----------+------+-------+
+2026/03/22 22:19:48 
+2026/03/22 22:19:48 Progress: 94%, Speed: 5.06x, ETA: 1s
+2026/03/22 22:19:48 SkinManager: Texture uploaded as single texture: ranking-panel.png
+2026/03/22 22:19:48 Progress: 95%, Speed: 4.96x, ETA: 1s
+2026/03/22 22:19:48 Progress: 96%, Speed: 4.51x, ETA: 1s
+2026/03/22 22:19:48 Progress: 97%, Speed: 4.86x, ETA: 0s
+2026/03/22 22:19:49 Progress: 98%, Speed: 5.19x, ETA: 0s
+2026/03/22 22:19:49 Progress: 99%, Speed: 5.13x, ETA: 0s
+2026/03/22 22:19:49 Progress: 100%, Speed: 4.82x, ETA: 0s
+2026/03/22 22:19:49 Finishing rendering...
+2026/03/22 22:19:49 Waiting for video to finish writing...
+2026/03/22 22:19:49 Finished! Stopping video pipe...
+2026/03/22 22:19:49 Video pipe closed. Waiting for video ffmpeg process to finish...
+2026/03/22 22:19:49 Video process finished.
+2026/03/22 22:19:49 Audio finished! Stopping audio pipe...
+2026/03/22 22:19:49 Audio pipe closed. Waiting for audio ffmpeg process to finish...
+2026/03/22 22:19:49 Audio process finished.
+2026/03/22 22:19:49 Ffmpeg finished.
+2026/03/22 22:19:49 Starting composing audio and video into one file...
+2026/03/22 22:19:49 Running ffmpeg with options: [-y -i C:\Users\jyeal\Documents\programming-related\osu-replay\output\King Gnu - AIZO (TV Size) [INSANE] (HailX) [6400218754]_temp\video.mp4 -i C:\Users\jyeal\Documents\programming-related\osu-replay\output\King Gnu - AIZO (TV Size) [INSANE] (HailX) [6400218754]_temp\audio.mp4 -c:v copy -c:a copy -strict -2 -movflags +faststart C:\Users\jyeal\Documents\programming-related\osu-replay\output\King Gnu - AIZO (TV Size) [INSANE] (HailX) [6400218754].mp4]
+2026/03/22 22:19:50 Finished!
+2026/03/22 22:19:50 Video is available at: C:\Users\jyeal\Documents\programming-related\osu-replay\output\King Gnu - AIZO (TV Size) [INSANE] (HailX) [6400218754].mp4
+2026/03/22 22:19:50 Cleaning up intermediate files...
+2026/03/22 22:19:50 Finished.
+2026/03/22 22:19:50 Exiting normally.

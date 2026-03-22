@@ -34,6 +34,7 @@ DEFAULT_HEIGHT = 1080
 DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = ""
+EXTRACT_CACHE_NAME = ".extract-cache.json"
 RULESET_BY_ID = {
     0: "osu",
     1: "taiko",
@@ -41,9 +42,6 @@ RULESET_BY_ID = {
     3: "mania",
 }
 
-client_id = "50062"
-client_secret = "yA26yn19pCaLU8MKgmhCGVhCTvHpr4XPXpdYKZp5"
-    
 @dataclass(frozen=True)
 class ScoreInfo:
     score_id: int
@@ -215,6 +213,10 @@ def ensure_supported_mode(score: ScoreInfo) -> None:
 
 def download_replay(access_token: str, score: ScoreInfo) -> Path:
     replay_path = REPLAYS_DIR / f"score_{score.score_id}.osr"
+    if is_cached_file(replay_path):
+        print(f"Using cached replay {score.score_id}...")
+        return replay_path
+
     print(f"Downloading replay {score.score_id}...")
     download_to_file(
         url=OSU_REPLAY_URL.format(score_id=score.score_id),
@@ -226,9 +228,13 @@ def download_replay(access_token: str, score: ScoreInfo) -> Path:
 
 
 def download_beatmap_archive(score: ScoreInfo) -> Path:
-    print(f"Downloading beatmapset {score.beatmapset_id}...")
     safe_name = sanitize_name(f"{score.beatmapset_id} {score.artist} - {score.title}")
     destination = DOWNLOADS_DIR / f"{safe_name}.osz"
+    if is_cached_file(destination):
+        print(f"Using cached beatmapset {score.beatmapset_id}...")
+        return destination
+
+    print(f"Downloading beatmapset {score.beatmapset_id}...")
     official_cookie = os.environ.get("OSU_SESSION", "").strip()
 
     attempts: list[tuple[str, dict[str, str]]] = []
@@ -260,6 +266,13 @@ def download_beatmap_archive(score: ScoreInfo) -> Path:
 
 def extract_beatmap_archive(archive_path: Path, score: ScoreInfo) -> Path:
     destination = SONGS_DIR / sanitize_name(f"{score.beatmapset_id} {score.artist} - {score.title}")
+    cache_path = destination / EXTRACT_CACHE_NAME
+    archive_cache = build_archive_cache_payload(archive_path)
+
+    if should_reuse_extracted_beatmap(destination, cache_path, archive_cache):
+        print(f"Using cached extraction for {archive_path.name}...")
+        return destination
+
     if destination.exists():
         shutil.rmtree(destination)
     destination.mkdir(parents=True, exist_ok=True)
@@ -277,6 +290,7 @@ def extract_beatmap_archive(archive_path: Path, score: ScoreInfo) -> Path:
     if not osu_files:
         fail("The beatmap archive extracted successfully but did not contain any .osu files.")
 
+    cache_path.write_text(json.dumps(archive_cache, indent=2), encoding="utf-8")
     return destination
 
 
@@ -550,6 +564,38 @@ def download_to_file(
 def content_type_matches(content_type: str, accepted: tuple[str, ...]) -> bool:
     normalized = content_type.lower().strip()
     return any(normalized == value or normalized.startswith(f"{value};") for value in accepted)
+
+
+def is_cached_file(path: Path) -> bool:
+    return path.exists() and path.is_file() and path.stat().st_size > 0
+
+
+def build_archive_cache_payload(archive_path: Path) -> dict[str, Any]:
+    archive_stat = archive_path.stat()
+    return {
+        "archive_name": archive_path.name,
+        "archive_size": archive_stat.st_size,
+        "archive_mtime_ns": archive_stat.st_mtime_ns,
+    }
+
+
+def should_reuse_extracted_beatmap(
+    destination: Path,
+    cache_path: Path,
+    archive_cache: dict[str, Any],
+) -> bool:
+    if not destination.exists() or not destination.is_dir() or not cache_path.exists():
+        return False
+
+    try:
+        cached_payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+
+    if cached_payload != archive_cache:
+        return False
+
+    return any(destination.rglob("*.osu"))
 
 
 def sanitize_name(raw_value: str) -> str:
