@@ -27,7 +27,7 @@ RENDER_LOG_PATH = WORK_DIR / "render.log"
 OSU_OAUTH_URL = "https://osu.ppy.sh/oauth/token"
 OSU_SCORE_URL = "https://osu.ppy.sh/api/v2/scores/{score_id}"
 OSU_REPLAY_URL = "https://osu.ppy.sh/api/v2/scores/{score_id}/download"
-OSU_BEATMAP_DOWNLOAD_URL = "https://osu.ppy.sh/beatmapsets/{beatmapset_id}/download?noVideo=1"
+OSU_BEATMAP_DOWNLOAD_URL = "https://osu.ppy.sh/beatmapsets/{beatmapset_id}/download"
 DANSER_RELEASE_URL = "https://api.github.com/repos/Wieku/danser-go/releases/latest"
 
 DEFAULT_SETTINGS_NAME = "renderer"
@@ -36,6 +36,7 @@ DEFAULT_HEIGHT = 720
 DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
+DEFAULT_BACKGROUND_DIM = 0.8
 OUTPUT_METADATA_SUFFIX = ".render.json"
 EXTRACT_CACHE_NAME = ".extract-cache.json"
 FAILED_LOG_TAIL_LINES = 40
@@ -52,6 +53,7 @@ class ScoreInfo:
     beatmap_id: int
     beatmapset_id: int
     mode: str
+    has_video: bool
     artist: str
     title: str
     difficulty: str
@@ -192,6 +194,7 @@ def parse_score_info(payload: dict[str, Any], requested_score_id: int) -> ScoreI
     beatmap_id = as_int(beatmap.get("id"))
     beatmapset_id = as_int(beatmapset.get("id") or beatmap.get("beatmapset_id"))
     mode = str(payload.get("mode") or RULESET_BY_ID.get(as_int(payload.get("ruleset_id")), "")).strip().lower()
+    has_video = as_bool(beatmapset.get("video"))
     artist = str(beatmapset.get("artist") or "unknown artist").strip()
     title = str(beatmapset.get("title") or "unknown title").strip()
     difficulty = str(beatmap.get("version") or f"beatmap {beatmap_id}").strip()
@@ -209,6 +212,7 @@ def parse_score_info(payload: dict[str, Any], requested_score_id: int) -> ScoreI
         beatmap_id=beatmap_id,
         beatmapset_id=beatmapset_id,
         mode=mode,
+        has_video=has_video,
         artist=artist,
         title=title,
         difficulty=difficulty,
@@ -239,23 +243,25 @@ def download_replay(access_token: str, score: ScoreInfo) -> Path:
 
 def download_beatmap_archive(score: ScoreInfo) -> Path:
     safe_name = sanitize_name(f"{score.beatmapset_id} {score.artist} - {score.title}")
-    destination = DOWNLOADS_DIR / f"{safe_name}.osz"
+    archive_variant = "video" if score.has_video else "no-video"
+    destination = DOWNLOADS_DIR / f"{safe_name} [{archive_variant}].osz"
     if is_cached_file(destination):
         print(f"Using cached beatmapset {score.beatmapset_id}...")
         return destination
 
-    print(f"Downloading beatmapset {score.beatmapset_id}...")
+    video_label = "with video" if score.has_video else "without video"
+    print(f"Downloading beatmapset {score.beatmapset_id} {video_label}...")
     official_cookie = os.environ.get("OSU_SESSION", "").strip()
 
     attempts: list[tuple[str, dict[str, str]]] = []
     if official_cookie:
         attempts.append(
             (
-                OSU_BEATMAP_DOWNLOAD_URL.format(beatmapset_id=score.beatmapset_id),
+                build_official_beatmap_download_url(score),
                 {"Cookie": f"osu_session={official_cookie}"},
             )
         )
-    attempts.append((f"https://catboy.best/d/{score.beatmapset_id}n", {}))
+    attempts.append((build_catboy_download_url(score), {}))
     attempts.append((f"https://api.nerinyan.moe/d/{score.beatmapset_id}", {}))
 
     errors: list[str] = []
@@ -486,6 +492,14 @@ def write_danser_settings(danser_directory: Path, encoder: dict[str, Any], skin_
     payload = {
         "General": general,
         "Skin": skin_settings,
+        "Playfield": {
+            "Background": {
+                "LoadVideos": True,
+                "Dim": {
+                    "Normal": DEFAULT_BACKGROUND_DIM,
+                },
+            },
+        },
         "Recording": recording,
     }
 
@@ -661,6 +675,18 @@ def content_type_matches(content_type: str, accepted: tuple[str, ...]) -> bool:
     return any(normalized == value or normalized.startswith(f"{value};") for value in accepted)
 
 
+def build_official_beatmap_download_url(score: ScoreInfo) -> str:
+    url = OSU_BEATMAP_DOWNLOAD_URL.format(beatmapset_id=score.beatmapset_id)
+    if score.has_video:
+        return url
+    return f"{url}?noVideo=1"
+
+
+def build_catboy_download_url(score: ScoreInfo) -> str:
+    suffix = "" if score.has_video else "n"
+    return f"https://catboy.best/d/{score.beatmapset_id}{suffix}"
+
+
 def is_cached_file(path: Path) -> bool:
     return path.exists() and path.is_file() and path.stat().st_size > 0
 
@@ -722,6 +748,16 @@ def as_int(value: Any) -> int:
         return int(value)
     except (TypeError, ValueError):
         return 0
+
+
+def as_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    if isinstance(value, (int, float)):
+        return value != 0
+    return False
 
 
 def fail(message: str) -> None:
