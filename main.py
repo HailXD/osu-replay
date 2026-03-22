@@ -30,8 +30,8 @@ OSU_BEATMAP_DOWNLOAD_URL = "https://osu.ppy.sh/beatmapsets/{beatmapset_id}/downl
 DANSER_RELEASE_URL = "https://api.github.com/repos/Wieku/danser-go/releases/latest"
 
 DEFAULT_SETTINGS_NAME = "renderer"
-DEFAULT_WIDTH = 1920
-DEFAULT_HEIGHT = 1080
+DEFAULT_WIDTH = 1280
+DEFAULT_HEIGHT = 720
 DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = ""
