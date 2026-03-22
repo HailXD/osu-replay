@@ -21,6 +21,7 @@ DOWNLOADS_DIR = WORK_DIR / "downloads"
 SONGS_DIR = WORK_DIR / "songs"
 REPLAYS_DIR = WORK_DIR / "replays"
 OUTPUT_DIR = ROOT_DIR / "output"
+RENDER_LOG_PATH = WORK_DIR / "render.log"
 
 OSU_OAUTH_URL = "https://osu.ppy.sh/oauth/token"
 OSU_SCORE_URL = "https://osu.ppy.sh/api/v2/scores/{score_id}"
@@ -35,6 +36,7 @@ DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = ""
 EXTRACT_CACHE_NAME = ".extract-cache.json"
+FAILED_LOG_TAIL_LINES = 40
 RULESET_BY_ID = {
     0: "osu",
     1: "taiko",
@@ -491,9 +493,22 @@ def render_replay(
     if skin_path is not None:
         command.append(f"-skin={skin_path.name}")
 
-    result = subprocess.run(command, cwd=danser_install.directory, check=False)
+    with RENDER_LOG_PATH.open("w", encoding="utf-8", errors="replace") as log_handle:
+        result = subprocess.run(
+            command,
+            cwd=danser_install.directory,
+            check=False,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+        )
     if result.returncode != 0:
-        fail(f"danser exited with code {result.returncode}.")
+        fail(
+            f"danser exited with code {result.returncode}.\n"
+            f"Render log: {RENDER_LOG_PATH}\n"
+            f"{read_log_tail(RENDER_LOG_PATH, FAILED_LOG_TAIL_LINES)}"
+        )
+
+    print(f"Render log saved to: {RENDER_LOG_PATH}")
 
 
 def fetch_json(
@@ -603,6 +618,19 @@ def sanitize_name(raw_value: str) -> str:
     sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", collapsed)
     sanitized = sanitized.rstrip(". ")
     return sanitized or "output"
+
+
+def read_log_tail(path: Path, line_count: int) -> str:
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return "Could not read the render log."
+
+    tail = lines[-line_count:]
+    if not tail:
+        return "Render log is empty."
+
+    return "\n".join(tail)
 
 
 def as_dict(value: Any) -> dict[str, Any]:
