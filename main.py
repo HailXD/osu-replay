@@ -439,7 +439,7 @@ def write_danser_settings(danser_directory: Path, encoder: dict[str, Any], skin_
     skin_settings: dict[str, Any] = {
         "CurrentSkin": skin_path.name if skin_path else "default",
         "FallbackSkin": "default",
-        "UseColorsFromSkin": False,
+        "UseColorsFromSkin": skin_path is not None,
         "UseBeatmapColors": False,
         "Cursor": {
             "UseSkinCursor": skin_path is not None,
