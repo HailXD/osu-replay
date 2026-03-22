@@ -36,7 +36,8 @@ DEFAULT_HEIGHT = 720
 DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
-DEFAULT_BACKGROUND_DIM = 0.8
+DEFAULT_BACKGROUND_DIM = 0.7
+OUTPUT_METADATA_DIR_NAME = ".render-metadata"
 OUTPUT_METADATA_SUFFIX = ".render.json"
 EXTRACT_CACHE_NAME = ".extract-cache.json"
 FAILED_LOG_TAIL_LINES = 40
@@ -543,23 +544,35 @@ def find_existing_render(score: ScoreInfo, render_metadata: dict[str, Any]) -> P
 
 def write_render_metadata(output_path: Path, render_metadata: dict[str, Any]) -> None:
     metadata_path = get_render_metadata_path(output_path)
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
     metadata_path.write_text(json.dumps(render_metadata, indent=2), encoding="utf-8")
+    legacy_metadata_path = get_legacy_render_metadata_path(output_path)
+    if legacy_metadata_path.exists():
+        legacy_metadata_path.unlink()
 
 
 def read_render_metadata(output_path: Path) -> dict[str, Any] | None:
-    metadata_path = get_render_metadata_path(output_path)
-    if not metadata_path.exists():
-        return None
+    metadata_paths = (get_render_metadata_path(output_path), get_legacy_render_metadata_path(output_path))
+    for metadata_path in metadata_paths:
+        if not metadata_path.exists():
+            continue
 
-    try:
-        payload = json.loads(metadata_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
+        try:
+            payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
 
-    return payload if isinstance(payload, dict) else None
+        if isinstance(payload, dict):
+            return payload
+
+    return None
 
 
 def get_render_metadata_path(output_path: Path) -> Path:
+    return output_path.parent / OUTPUT_METADATA_DIR_NAME / f"{output_path.name}{OUTPUT_METADATA_SUFFIX}"
+
+
+def get_legacy_render_metadata_path(output_path: Path) -> Path:
     return output_path.with_suffix(output_path.suffix + OUTPUT_METADATA_SUFFIX)
 
 
