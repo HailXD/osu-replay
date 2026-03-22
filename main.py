@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parent
+ENV_PATH = ROOT_DIR / ".env"
 VENDOR_DIR = ROOT_DIR / "vendor" / "danser"
 WORK_DIR = ROOT_DIR / "work"
 DOWNLOADS_DIR = WORK_DIR / "downloads"
@@ -64,6 +65,7 @@ class DanserInstall:
 
 
 def main() -> int:
+    load_dotenv_file()
     ensure_directories()
     score_input = input("Score URL or score ID: ").strip()
     if not score_input:
@@ -137,6 +139,27 @@ def load_osu_credentials() -> tuple[str, str]:
         fail("Both osu! OAuth client ID and client secret are required.")
 
     return client_id, client_secret
+
+
+def load_dotenv_file() -> None:
+    if not ENV_PATH.exists():
+        return
+
+    for raw_line in ENV_PATH.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            continue
+
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+
+        os.environ.setdefault(key, value)
 
 
 def fetch_access_token(client_id: str, client_secret: str) -> str:
@@ -271,7 +294,12 @@ def ensure_danser_install() -> DanserInstall:
         print(f"Downloading danser {version}...")
         archive_url = find_windows_asset_url(assets)
         archive_path = DOWNLOADS_DIR / f"danser-{version}-win.zip"
-        download_to_file(archive_url, archive_path, headers={}, accepted_content_types=("application/zip",))
+        download_to_file(
+            archive_url,
+            archive_path,
+            headers={},
+            accepted_content_types=("application/zip", "application/octet-stream"),
+        )
         if install_dir.exists():
             shutil.rmtree(install_dir)
         install_dir.mkdir(parents=True, exist_ok=True)
