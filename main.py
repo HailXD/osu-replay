@@ -20,6 +20,7 @@ WORK_DIR = ROOT_DIR / "work"
 DOWNLOADS_DIR = WORK_DIR / "downloads"
 SONGS_DIR = WORK_DIR / "songs"
 REPLAYS_DIR = WORK_DIR / "replays"
+DANSER_RUNTIME_DIR = WORK_DIR / "danser-runtime"
 OUTPUT_DIR = ROOT_DIR / "output"
 RENDER_LOG_PATH = WORK_DIR / "render.log"
 
@@ -86,7 +87,7 @@ def main() -> int:
     beatmap_archive_path = download_beatmap_archive(score)
     extract_beatmap_archive(beatmap_archive_path, score)
 
-    danser_install = ensure_danser_install()
+    danser_install = prepare_danser_runtime(ensure_danser_install())
     encoder = choose_encoder(danser_install.ffmpeg)
     skin_path = parse_skin_path("")
     settings_path = write_danser_settings(danser_install.directory, encoder, skin_path)
@@ -109,7 +110,7 @@ def main() -> int:
 
 
 def ensure_directories() -> None:
-    for directory in (VENDOR_DIR, DOWNLOADS_DIR, SONGS_DIR, REPLAYS_DIR, OUTPUT_DIR):
+    for directory in (VENDOR_DIR, DOWNLOADS_DIR, SONGS_DIR, REPLAYS_DIR, DANSER_RUNTIME_DIR, OUTPUT_DIR):
         directory.mkdir(parents=True, exist_ok=True)
 
 
@@ -328,6 +329,22 @@ def ensure_danser_install() -> DanserInstall:
     return DanserInstall(version=version, directory=install_dir, executable=executable, ffmpeg=ffmpeg)
 
 
+def prepare_danser_runtime(source_install: DanserInstall) -> DanserInstall:
+    runtime_dir = DANSER_RUNTIME_DIR / source_install.version
+    executable = find_existing_danser(runtime_dir)
+    if executable is None:
+        print(f"Preparing danser runtime {source_install.version}...")
+        if runtime_dir.exists():
+            shutil.rmtree(runtime_dir)
+        shutil.copytree(source_install.directory, runtime_dir)
+        executable = find_existing_danser(runtime_dir)
+        if executable is None:
+            fail(f"danser runtime {source_install.version} is missing danser-cli.exe.")
+
+    ffmpeg = find_existing_ffmpeg(runtime_dir)
+    return DanserInstall(version=source_install.version, directory=runtime_dir, executable=executable, ffmpeg=ffmpeg)
+
+
 def find_windows_asset_url(assets: list[Any]) -> str:
     for asset in assets:
         if not isinstance(asset, dict):
@@ -488,6 +505,7 @@ def render_replay(
     skin_path: Path | None,
 ) -> None:
     print("Rendering video with danser...")
+    danser_log_path = danser_install.directory / "danser.log"
     command = [
         str(danser_install.executable),
         f"-settings={settings_path.stem}",
@@ -509,6 +527,8 @@ def render_replay(
             stdout=log_handle,
             stderr=subprocess.STDOUT,
         )
+    if danser_log_path.exists():
+        danser_log_path.unlink()
     if result.returncode != 0:
         fail(
             f"danser exited with code {result.returncode}.\n"
