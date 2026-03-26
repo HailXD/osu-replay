@@ -9,11 +9,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
-ROOT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = Path(sys.argv[0]).resolve().parent
 ENV_PATH = ROOT_DIR / ".env"
 VENDOR_DIR = ROOT_DIR / "vendor" / "danser"
 WORK_DIR = ROOT_DIR / "work"
@@ -48,28 +46,7 @@ RULESET_BY_ID = {
     3: "mania",
 }
 
-@dataclass(frozen=True)
-class ScoreInfo:
-    score_id: int
-    beatmap_id: int
-    beatmapset_id: int
-    mode: str
-    has_video: bool
-    artist: str
-    title: str
-    difficulty: str
-    username: str
-
-
-@dataclass(frozen=True)
-class DanserInstall:
-    version: str
-    directory: Path
-    executable: Path
-    ffmpeg: Path | None
-
-
-def main() -> int:
+def main():
     load_dotenv_file()
     ensure_directories()
     score_input = input("Score URL or score ID: ").strip()
@@ -88,9 +65,9 @@ def main() -> int:
     ensure_supported_mode(score)
 
     danser_install = prepare_danser_runtime(ensure_danser_install())
-    encoder = choose_encoder(danser_install.ffmpeg)
+    encoder = choose_encoder(danser_install["ffmpeg"])
     skin_path = parse_skin_path("")
-    settings_path = write_danser_settings(danser_install.directory, encoder, skin_path)
+    settings_path = write_danser_settings(danser_install["directory"], encoder, skin_path)
     render_metadata = build_render_metadata(score, danser_install, settings_path)
     existing_output = find_existing_render(score, render_metadata)
     if existing_output is not None:
@@ -120,12 +97,12 @@ def main() -> int:
     return 0
 
 
-def ensure_directories() -> None:
+def ensure_directories():
     for directory in (VENDOR_DIR, DOWNLOADS_DIR, SONGS_DIR, REPLAYS_DIR, DANSER_RUNTIME_DIR, OUTPUT_DIR):
         directory.mkdir(parents=True, exist_ok=True)
 
 
-def parse_score_id(raw_value: str) -> int:
+def parse_score_id(raw_value):
     stripped = raw_value.strip()
     if stripped.isdigit():
         return int(stripped)
@@ -137,7 +114,7 @@ def parse_score_id(raw_value: str) -> int:
     return int(match.group(1))
 
 
-def load_osu_credentials() -> tuple[str, str]:
+def load_osu_credentials():
     client_id = os.environ.get("OSU_CLIENT_ID", "").strip()
     client_secret = os.environ.get("OSU_CLIENT_SECRET", "").strip()
 
@@ -152,7 +129,7 @@ def load_osu_credentials() -> tuple[str, str]:
     return client_id, client_secret
 
 
-def load_dotenv_file() -> None:
+def load_dotenv_file():
     if not ENV_PATH.exists():
         return
 
@@ -173,7 +150,7 @@ def load_dotenv_file() -> None:
         os.environ.setdefault(key, value)
 
 
-def fetch_access_token(client_id: str, client_secret: str) -> str:
+def fetch_access_token(client_id, client_secret):
     payload = {
         "client_id": client_id,
         "client_secret": client_secret,
@@ -187,7 +164,7 @@ def fetch_access_token(client_id: str, client_secret: str) -> str:
     return token
 
 
-def parse_score_info(payload: dict[str, Any], requested_score_id: int) -> ScoreInfo:
+def parse_score_info(payload, requested_score_id):
     beatmap = as_dict(payload.get("beatmap"))
     beatmapset = as_dict(payload.get("beatmapset")) or as_dict(beatmap.get("beatmapset"))
     user = as_dict(payload.get("user"))
@@ -208,33 +185,33 @@ def parse_score_info(payload: dict[str, Any], requested_score_id: int) -> ScoreI
     if not mode:
         fail("The score payload did not contain a ruleset/mode.")
 
-    return ScoreInfo(
-        score_id=requested_score_id,
-        beatmap_id=beatmap_id,
-        beatmapset_id=beatmapset_id,
-        mode=mode,
-        has_video=has_video,
-        artist=artist,
-        title=title,
-        difficulty=difficulty,
-        username=username,
-    )
+    return {
+        "score_id": requested_score_id,
+        "beatmap_id": beatmap_id,
+        "beatmapset_id": beatmapset_id,
+        "mode": mode,
+        "has_video": has_video,
+        "artist": artist,
+        "title": title,
+        "difficulty": difficulty,
+        "username": username,
+    }
 
 
-def ensure_supported_mode(score: ScoreInfo) -> None:
-    if score.mode != "osu":
-        fail(f"danser only supports osu!standard replays. This score is '{score.mode}'.")
+def ensure_supported_mode(score):
+    if score["mode"] != "osu":
+        fail(f"danser only supports osu!standard replays. This score is '{score['mode']}'.")
 
 
-def download_replay(access_token: str, score: ScoreInfo) -> Path:
-    replay_path = REPLAYS_DIR / f"score_{score.score_id}.osr"
+def download_replay(access_token, score):
+    replay_path = REPLAYS_DIR / f"score_{score['score_id']}.osr"
     if is_cached_file(replay_path):
-        print(f"Using cached replay {score.score_id}...")
+        print(f"Using cached replay {score['score_id']}...")
         return replay_path
 
-    print(f"Downloading replay {score.score_id}...")
+    print(f"Downloading replay {score['score_id']}...")
     download_to_file(
-        url=OSU_REPLAY_URL.format(score_id=score.score_id),
+        url=OSU_REPLAY_URL.format(score_id=score["score_id"]),
         destination=replay_path,
         headers={"Authorization": f"Bearer {access_token}"},
         accepted_content_types=("application/octet-stream", "application/x-osu-replay"),
@@ -242,19 +219,19 @@ def download_replay(access_token: str, score: ScoreInfo) -> Path:
     return replay_path
 
 
-def download_beatmap_archive(score: ScoreInfo) -> Path:
-    safe_name = sanitize_name(f"{score.beatmapset_id} {score.artist} - {score.title}")
-    archive_variant = "video" if score.has_video else "no-video"
+def download_beatmap_archive(score):
+    safe_name = sanitize_name(f"{score['beatmapset_id']} {score['artist']} - {score['title']}")
+    archive_variant = "video" if score["has_video"] else "no-video"
     destination = DOWNLOADS_DIR / f"{safe_name} [{archive_variant}].osz"
     if is_cached_file(destination):
-        print(f"Using cached beatmapset {score.beatmapset_id}...")
+        print(f"Using cached beatmapset {score['beatmapset_id']}...")
         return destination
 
-    video_label = "with video" if score.has_video else "without video"
-    print(f"Downloading beatmapset {score.beatmapset_id} {video_label}...")
+    video_label = "with video" if score["has_video"] else "without video"
+    print(f"Downloading beatmapset {score['beatmapset_id']} {video_label}...")
     official_cookie = os.environ.get("OSU_SESSION", "").strip()
 
-    attempts: list[tuple[str, dict[str, str]]] = []
+    attempts = []
     if official_cookie:
         attempts.append(
             (
@@ -263,9 +240,9 @@ def download_beatmap_archive(score: ScoreInfo) -> Path:
             )
         )
     attempts.append((build_catboy_download_url(score), {}))
-    attempts.append((f"https://api.nerinyan.moe/d/{score.beatmapset_id}", {}))
+    attempts.append((f"https://api.nerinyan.moe/d/{score['beatmapset_id']}", {}))
 
-    errors: list[str] = []
+    errors = []
     for url, headers in attempts:
         try:
             download_to_file(
@@ -281,8 +258,8 @@ def download_beatmap_archive(score: ScoreInfo) -> Path:
     fail("Beatmap download failed.\n" + "\n".join(errors))
 
 
-def extract_beatmap_archive(archive_path: Path, score: ScoreInfo) -> Path:
-    destination = SONGS_DIR / sanitize_name(f"{score.beatmapset_id} {score.artist} - {score.title}")
+def extract_beatmap_archive(archive_path, score):
+    destination = SONGS_DIR / sanitize_name(f"{score['beatmapset_id']} {score['artist']} - {score['title']}")
     cache_path = destination / EXTRACT_CACHE_NAME
     archive_cache = build_archive_cache_payload(archive_path)
 
@@ -311,7 +288,7 @@ def extract_beatmap_archive(archive_path: Path, score: ScoreInfo) -> Path:
     return destination
 
 
-def ensure_danser_install() -> DanserInstall:
+def ensure_danser_install():
     release = fetch_json(DANSER_RELEASE_URL)
     version = str(release.get("tag_name", "")).strip()
     assets = release.get("assets")
@@ -341,26 +318,36 @@ def ensure_danser_install() -> DanserInstall:
             fail(f"danser {version} was extracted but danser-cli.exe was not found.")
 
     ffmpeg = find_existing_ffmpeg(install_dir)
-    return DanserInstall(version=version, directory=install_dir, executable=executable, ffmpeg=ffmpeg)
+    return {
+        "version": version,
+        "directory": install_dir,
+        "executable": executable,
+        "ffmpeg": ffmpeg,
+    }
 
 
-def prepare_danser_runtime(source_install: DanserInstall) -> DanserInstall:
-    runtime_dir = DANSER_RUNTIME_DIR / source_install.version
+def prepare_danser_runtime(source_install):
+    runtime_dir = DANSER_RUNTIME_DIR / source_install["version"]
     executable = find_existing_danser(runtime_dir)
     if executable is None:
-        print(f"Preparing danser runtime {source_install.version}...")
+        print(f"Preparing danser runtime {source_install['version']}...")
         if runtime_dir.exists():
             shutil.rmtree(runtime_dir)
-        shutil.copytree(source_install.directory, runtime_dir)
+        shutil.copytree(source_install["directory"], runtime_dir)
         executable = find_existing_danser(runtime_dir)
         if executable is None:
-            fail(f"danser runtime {source_install.version} is missing danser-cli.exe.")
+            fail(f"danser runtime {source_install['version']} is missing danser-cli.exe.")
 
     ffmpeg = find_existing_ffmpeg(runtime_dir)
-    return DanserInstall(version=source_install.version, directory=runtime_dir, executable=executable, ffmpeg=ffmpeg)
+    return {
+        "version": source_install["version"],
+        "directory": runtime_dir,
+        "executable": executable,
+        "ffmpeg": ffmpeg,
+    }
 
 
-def find_windows_asset_url(assets: list[Any]) -> str:
+def find_windows_asset_url(assets):
     for asset in assets:
         if not isinstance(asset, dict):
             continue
@@ -371,12 +358,12 @@ def find_windows_asset_url(assets: list[Any]) -> str:
     fail("Could not find a Windows danser release asset.")
 
 
-def find_existing_danser(directory: Path) -> Path | None:
+def find_existing_danser(directory):
     matches = list(directory.rglob("danser-cli.exe"))
     return matches[0] if matches else None
 
 
-def find_existing_ffmpeg(directory: Path) -> Path | None:
+def find_existing_ffmpeg(directory):
     matches = list(directory.rglob("ffmpeg.exe"))
     if matches:
         return matches[0]
@@ -385,7 +372,7 @@ def find_existing_ffmpeg(directory: Path) -> Path | None:
     return Path(path_name) if path_name else None
 
 
-def choose_encoder(ffmpeg_path: Path | None) -> dict[str, Any]:
+def choose_encoder(ffmpeg_path):
     has_nvenc = False
     if ffmpeg_path is not None and shutil.which("nvidia-smi"):
         result = subprocess.run(
@@ -424,7 +411,7 @@ def choose_encoder(ffmpeg_path: Path | None) -> dict[str, Any]:
     }
 
 
-def parse_skin_path(raw_value: str) -> Path | None:
+def parse_skin_path(raw_value):
     candidate_value = raw_value or DEFAULT_SKIN_INPUT
     if not candidate_value:
         return None
@@ -437,12 +424,12 @@ def parse_skin_path(raw_value: str) -> Path | None:
     return candidate
 
 
-def write_danser_settings(danser_directory: Path, encoder: dict[str, Any], skin_path: Path | None) -> Path:
+def write_danser_settings(danser_directory, encoder, skin_path):
     settings_dir = danser_directory / "settings"
     settings_dir.mkdir(parents=True, exist_ok=True)
     settings_path = settings_dir / f"{DEFAULT_SETTINGS_NAME}.json"
 
-    general: dict[str, Any] = {
+    general = {
         "OsuSongsDir": str(SONGS_DIR),
         "OsuSkinsDir": str(skin_path.parent if skin_path else danser_directory / "skins"),
         "OsuReplaysDir": str(REPLAYS_DIR),
@@ -451,7 +438,7 @@ def write_danser_settings(danser_directory: Path, encoder: dict[str, Any], skin_
         "VerboseImportLogs": False,
     }
 
-    skin_settings: dict[str, Any] = {
+    skin_settings = {
         "CurrentSkin": skin_path.name if skin_path else "default",
         "FallbackSkin": "default",
         "UseColorsFromSkin": skin_path is not None,
@@ -508,9 +495,9 @@ def write_danser_settings(danser_directory: Path, encoder: dict[str, Any], skin_
     return settings_path
 
 
-def build_output_stem(score: ScoreInfo) -> str:
+def build_output_stem(score):
     base = sanitize_name(
-        f"{score.artist} - {score.title} [{score.difficulty}] ({score.username}) [{score.score_id}]"
+        f"{score['artist']} - {score['title']} [{score['difficulty']}] ({score['username']}) [{score['score_id']}]"
     )
     candidate = base
     suffix = 2
@@ -520,20 +507,20 @@ def build_output_stem(score: ScoreInfo) -> str:
     return candidate
 
 
-def build_render_metadata(score: ScoreInfo, danser_install: DanserInstall, settings_path: Path) -> dict[str, Any]:
+def build_render_metadata(score, danser_install, settings_path):
     settings_payload = json.loads(settings_path.read_text(encoding="utf-8"))
     if not isinstance(settings_payload, dict):
         fail(f"Expected settings JSON object in {settings_path}")
 
     return {
-        "score_id": score.score_id,
-        "danser_version": danser_install.version,
+        "score_id": score["score_id"],
+        "danser_version": danser_install["version"],
         "settings": settings_payload,
     }
 
 
-def find_existing_render(score: ScoreInfo, render_metadata: dict[str, Any]) -> Path | None:
-    score_marker = f"[{score.score_id}]"
+def find_existing_render(score, render_metadata):
+    score_marker = f"[{score['score_id']}]"
     for output_path in OUTPUT_DIR.glob(f"*.{DEFAULT_CONTAINER}"):
         if score_marker not in output_path.stem or not is_cached_file(output_path):
             continue
@@ -542,7 +529,7 @@ def find_existing_render(score: ScoreInfo, render_metadata: dict[str, Any]) -> P
     return None
 
 
-def write_render_metadata(output_path: Path, render_metadata: dict[str, Any]) -> None:
+def write_render_metadata(output_path, render_metadata):
     metadata_path = get_render_metadata_path(output_path)
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
     metadata_path.write_text(json.dumps(render_metadata, indent=2), encoding="utf-8")
@@ -551,7 +538,7 @@ def write_render_metadata(output_path: Path, render_metadata: dict[str, Any]) ->
         legacy_metadata_path.unlink()
 
 
-def read_render_metadata(output_path: Path) -> dict[str, Any] | None:
+def read_render_metadata(output_path):
     metadata_paths = (get_render_metadata_path(output_path), get_legacy_render_metadata_path(output_path))
     for metadata_path in metadata_paths:
         if not metadata_path.exists():
@@ -568,25 +555,19 @@ def read_render_metadata(output_path: Path) -> dict[str, Any] | None:
     return None
 
 
-def get_render_metadata_path(output_path: Path) -> Path:
+def get_render_metadata_path(output_path):
     return output_path.parent / OUTPUT_METADATA_DIR_NAME / f"{output_path.name}{OUTPUT_METADATA_SUFFIX}"
 
 
-def get_legacy_render_metadata_path(output_path: Path) -> Path:
+def get_legacy_render_metadata_path(output_path):
     return output_path.with_suffix(output_path.suffix + OUTPUT_METADATA_SUFFIX)
 
 
-def render_replay(
-    danser_install: DanserInstall,
-    settings_path: Path,
-    replay_path: Path,
-    output_stem: str,
-    skin_path: Path | None,
-) -> None:
+def render_replay(danser_install, settings_path, replay_path, output_stem, skin_path):
     print("Rendering video with danser...")
-    danser_log_path = danser_install.directory / "danser.log"
+    danser_log_path = danser_install["directory"] / "danser.log"
     command = [
-        str(danser_install.executable),
+        str(danser_install["executable"]),
         f"-settings={settings_path.stem}",
         "-record",
         f"-replay={replay_path}",
@@ -601,7 +582,7 @@ def render_replay(
     with RENDER_LOG_PATH.open("w", encoding="utf-8", errors="replace") as log_handle:
         result = subprocess.run(
             command,
-            cwd=danser_install.directory,
+            cwd=danser_install["directory"],
             check=False,
             stdout=log_handle,
             stderr=subprocess.STDOUT,
@@ -618,12 +599,7 @@ def render_replay(
     print(f"Render log saved to: {RENDER_LOG_PATH}")
 
 
-def fetch_json(
-    url: str,
-    *,
-    headers: dict[str, str] | None = None,
-    data: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+def fetch_json(url, *, headers=None, data=None):
     raw_data = None
     request_headers = {
         "Accept": "application/json",
@@ -651,13 +627,7 @@ def fetch_json(
     return payload
 
 
-def download_to_file(
-    url: str,
-    destination: Path,
-    *,
-    headers: dict[str, str],
-    accepted_content_types: tuple[str, ...],
-) -> None:
+def download_to_file(url, destination, *, headers, accepted_content_types):
     request_headers = {
         "Accept": "*/*",
         "User-Agent": "osu-replay-renderer/1.0",
@@ -683,28 +653,28 @@ def download_to_file(
         raise RuntimeError(str(error)) from error
 
 
-def content_type_matches(content_type: str, accepted: tuple[str, ...]) -> bool:
+def content_type_matches(content_type, accepted):
     normalized = content_type.lower().strip()
     return any(normalized == value or normalized.startswith(f"{value};") for value in accepted)
 
 
-def build_official_beatmap_download_url(score: ScoreInfo) -> str:
-    url = OSU_BEATMAP_DOWNLOAD_URL.format(beatmapset_id=score.beatmapset_id)
-    if score.has_video:
+def build_official_beatmap_download_url(score):
+    url = OSU_BEATMAP_DOWNLOAD_URL.format(beatmapset_id=score["beatmapset_id"])
+    if score["has_video"]:
         return url
     return f"{url}?noVideo=1"
 
 
-def build_catboy_download_url(score: ScoreInfo) -> str:
-    suffix = "" if score.has_video else "n"
-    return f"https://catboy.best/d/{score.beatmapset_id}{suffix}"
+def build_catboy_download_url(score):
+    suffix = "" if score["has_video"] else "n"
+    return f"https://catboy.best/d/{score['beatmapset_id']}{suffix}"
 
 
-def is_cached_file(path: Path) -> bool:
+def is_cached_file(path):
     return path.exists() and path.is_file() and path.stat().st_size > 0
 
 
-def build_archive_cache_payload(archive_path: Path) -> dict[str, Any]:
+def build_archive_cache_payload(archive_path):
     archive_stat = archive_path.stat()
     return {
         "archive_name": archive_path.name,
@@ -713,11 +683,7 @@ def build_archive_cache_payload(archive_path: Path) -> dict[str, Any]:
     }
 
 
-def should_reuse_extracted_beatmap(
-    destination: Path,
-    cache_path: Path,
-    archive_cache: dict[str, Any],
-) -> bool:
+def should_reuse_extracted_beatmap(destination, cache_path, archive_cache):
     if not destination.exists() or not destination.is_dir() or not cache_path.exists():
         return False
 
@@ -732,14 +698,14 @@ def should_reuse_extracted_beatmap(
     return any(destination.rglob("*.osu"))
 
 
-def sanitize_name(raw_value: str) -> str:
+def sanitize_name(raw_value):
     collapsed = re.sub(r"\s+", " ", raw_value).strip()
     sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", collapsed)
     sanitized = sanitized.rstrip(". ")
     return sanitized or "output"
 
 
-def read_log_tail(path: Path, line_count: int) -> str:
+def read_log_tail(path, line_count):
     try:
         lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
@@ -752,18 +718,18 @@ def read_log_tail(path: Path, line_count: int) -> str:
     return "\n".join(tail)
 
 
-def as_dict(value: Any) -> dict[str, Any]:
+def as_dict(value):
     return value if isinstance(value, dict) else {}
 
 
-def as_int(value: Any) -> int:
+def as_int(value):
     try:
         return int(value)
     except (TypeError, ValueError):
         return 0
 
 
-def as_bool(value: Any) -> bool:
+def as_bool(value):
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
@@ -773,10 +739,9 @@ def as_bool(value: Any) -> bool:
     return False
 
 
-def fail(message: str) -> None:
+def fail(message):
     print(message, file=sys.stderr)
     raise SystemExit(1)
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+sys.exit(main())
