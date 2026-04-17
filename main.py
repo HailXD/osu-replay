@@ -39,12 +39,13 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
-KEY_HOLD_OVERLAY_VERSION = 2
+KEY_HOLD_OVERLAY_VERSION = 3
 KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
 KEY_HOLD_OVERLAY_WIDTH = 360
 KEY_HOLD_OVERLAY_HEIGHT = 88
 KEY_HOLD_OVERLAY_WINDOW_MS = 3100
+KEY_HOLD_OVERLAY_INITIAL_DELAY_DIVISOR = 2
 KEY_HOLD_OVERLAY_MARGIN_X = 10
 KEY_HOLD_OVERLAY_KEY_IDLE = (42, 47, 58, 220)
 KEY_HOLD_OVERLAY_TRACK_BG = (24, 27, 34, 150)
@@ -795,6 +796,18 @@ def parse_key_hold_intervals(replay_path):
         left_intervals.append((left_start, current_time))
     if right_down:
         right_intervals.append((right_start, current_time))
+
+    all_intervals = left_intervals + right_intervals
+    if not all_intervals:
+        return left_intervals, right_intervals
+
+    first_press = min(start for start, _ in all_intervals)
+    shift = first_press // KEY_HOLD_OVERLAY_INITIAL_DELAY_DIVISOR
+    if shift <= 0:
+        return left_intervals, right_intervals
+
+    left_intervals = [(start - shift, end - shift) for start, end in left_intervals]
+    right_intervals = [(start - shift, end - shift) for start, end in right_intervals]
     return left_intervals, right_intervals
 
 
