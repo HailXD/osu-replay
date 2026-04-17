@@ -39,7 +39,7 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
-KEY_HOLD_OVERLAY_VERSION = 7
+KEY_HOLD_OVERLAY_VERSION = 8
 KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
 KEY_HOLD_OVERLAY_WIDTH = 180
@@ -656,8 +656,13 @@ def apply_key_hold_overlay(output_path, replay_path, score, ffmpeg_path):
     if ffmpeg_path is None:
         fail("FFmpeg is required to render the key hold overlay.")
 
-    left_intervals, right_intervals = parse_key_hold_intervals(replay_path)
-    shift_time = get_key_hold_overlay_shift_time(score, replay_path, left_intervals, right_intervals)
+    mods = read_replay_mods(replay_path)
+    speed = get_replay_speed(mods)
+    left_intervals, right_intervals = parse_key_hold_intervals(replay_path, speed)
+    valid_press_time = get_key_hold_overlay_valid_press_time(score, mods, speed)
+    left_intervals = clip_key_hold_intervals(left_intervals, valid_press_time)
+    right_intervals = clip_key_hold_intervals(right_intervals, valid_press_time)
+    shift_time = get_key_hold_overlay_shift_time(left_intervals, right_intervals)
     left_intervals = clip_key_hold_intervals(left_intervals, shift_time)
     right_intervals = clip_key_hold_intervals(right_intervals, shift_time)
     if not left_intervals and not right_intervals:
@@ -760,7 +765,7 @@ def probe_media_duration(path, ffprobe_path):
     return duration
 
 
-def parse_key_hold_intervals(replay_path):
+def parse_key_hold_intervals(replay_path, speed):
     left_intervals = []
     right_intervals = []
     left_start = 0
@@ -783,7 +788,7 @@ def parse_key_hold_intervals(replay_path):
         if delta == -12345:
             break
         raw_time += delta
-        current_time = max(0, raw_time)
+        current_time = max(0, raw_time / speed)
         left_now = bool(keys & KEY_HOLD_OVERLAY_LEFT_BITS)
         right_now = bool(keys & KEY_HOLD_OVERLAY_RIGHT_BITS)
         if left_now and not left_down:
@@ -805,16 +810,18 @@ def parse_key_hold_intervals(replay_path):
     return left_intervals, right_intervals
 
 
-def get_key_hold_overlay_shift_time(score, replay_path, left_intervals, right_intervals):
-    beatmap_path = find_score_beatmap_path(score)
-    first_hitobject_time, overall_difficulty = read_beatmap_overlay_timing(beatmap_path)
-    valid_press_time = get_valid_press_time(first_hitobject_time, overall_difficulty, read_replay_mods(replay_path))
+def get_key_hold_overlay_shift_time(left_intervals, right_intervals):
     all_intervals = left_intervals + right_intervals
     if not all_intervals:
         return 0
-    valid_starts = [start for start, end in all_intervals if end > valid_press_time]
-    first_press = min(valid_starts) if valid_starts else min(start for start, _ in all_intervals)
+    first_press = min(start for start, _ in all_intervals)
     return first_press - KEY_HOLD_OVERLAY_FIRST_PRESS_MS
+
+
+def get_key_hold_overlay_valid_press_time(score, mods, speed):
+    beatmap_path = find_score_beatmap_path(score)
+    first_hitobject_time, overall_difficulty = read_beatmap_overlay_timing(beatmap_path)
+    return get_valid_press_time(first_hitobject_time / speed, overall_difficulty, mods)
 
 
 def find_score_beatmap_path(score):
@@ -867,6 +874,14 @@ def get_hit_window_50(overall_difficulty, mods):
     if mods & MOD_HALF_TIME:
         return hit_window_50 / 0.75
     return hit_window_50
+
+
+def get_replay_speed(mods):
+    if mods & (MOD_DOUBLE_TIME | MOD_NIGHTCORE):
+        return 1.5
+    if mods & MOD_HALF_TIME:
+        return 0.75
+    return 1
 
 
 def clip_key_hold_intervals(intervals, start_time):
