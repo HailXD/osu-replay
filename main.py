@@ -1,9 +1,11 @@
 import getpass
 import json
+import lzma
 import os
 import re
 import shutil
 import subprocess
+import struct
 import sys
 import urllib.error
 import urllib.parse
@@ -21,6 +23,7 @@ REPLAYS_DIR = WORK_DIR / "replays"
 DANSER_RUNTIME_DIR = WORK_DIR / "danser-runtime"
 OUTPUT_DIR = ROOT_DIR / "output"
 RENDER_LOG_PATH = WORK_DIR / "render.log"
+OVERLAY_LOG_PATH = WORK_DIR / "overlay.log"
 
 OSU_OAUTH_URL = "https://osu.ppy.sh/oauth/token"
 OSU_SCORE_URL = "https://osu.ppy.sh/api/v2/scores/{score_id}"
@@ -36,6 +39,26 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
+KEY_HOLD_OVERLAY_VERSION = 1
+KEY_HOLD_OVERLAY_ENABLED = True
+KEY_HOLD_OVERLAY_FPS = 60
+KEY_HOLD_OVERLAY_WIDTH = 260
+KEY_HOLD_OVERLAY_HEIGHT = 90
+KEY_HOLD_OVERLAY_MAX_MS = 250
+KEY_HOLD_OVERLAY_MARGIN_X = 70
+KEY_HOLD_OVERLAY_MARGIN_Y = 70
+KEY_HOLD_OVERLAY_PANEL = (14, 16, 22, 170)
+KEY_HOLD_OVERLAY_KEY_IDLE = (42, 47, 58, 220)
+KEY_HOLD_OVERLAY_BAR_BG = (42, 47, 58, 180)
+KEY_HOLD_OVERLAY_LEFT_BAR = (96, 214, 255, 235)
+KEY_HOLD_OVERLAY_RIGHT_BAR = (255, 141, 109, 235)
+KEY_HOLD_OVERLAY_TEXT = (255, 255, 255, 255)
+KEY_HOLD_OVERLAY_LEFT_BITS = 1 | 4
+KEY_HOLD_OVERLAY_RIGHT_BITS = 2 | 8
+KEY_HOLD_OVERLAY_FONT = {
+    "X": ("10001", "01010", "00100", "00100", "00100", "01010", "10001"),
+    "Z": ("11111", "00010", "00100", "00100", "01000", "10000", "11111"),
+}
 OUTPUT_METADATA_DIR_NAME = ".render-metadata"
 OUTPUT_METADATA_SUFFIX = ".render.json"
 EXTRACT_CACHE_NAME = ".extract-cache.json"
@@ -93,6 +116,7 @@ def main():
     if not output_path.exists():
         fail(f"Danser finished but the output file was not created: {output_path}")
 
+    apply_key_hold_overlay(output_path, replay_path, danser_install["ffmpeg"])
     write_render_metadata(output_path, render_metadata)
     print(f"Replay saved to: {output_path}")
     return 0
@@ -521,10 +545,18 @@ def build_render_metadata(score, danser_install, settings_path):
     if not isinstance(settings_payload, dict):
         fail(f"Expected settings JSON object in {settings_path}")
 
+    key_hold_overlay = {
+        "enabled": KEY_HOLD_OVERLAY_ENABLED,
+        "version": KEY_HOLD_OVERLAY_VERSION,
+        "fps": KEY_HOLD_OVERLAY_FPS,
+        "size": [KEY_HOLD_OVERLAY_WIDTH, KEY_HOLD_OVERLAY_HEIGHT],
+        "max_ms": KEY_HOLD_OVERLAY_MAX_MS,
+    }
     return {
         "score_id": score["score_id"],
         "danser_version": danser_install["version"],
         "settings": settings_payload,
+        "key_hold_overlay": key_hold_overlay,
     }
 
 
@@ -606,6 +638,274 @@ def render_replay(danser_install, settings_path, replay_path, output_stem, skin_
         )
 
     print(f"Render log saved to: {RENDER_LOG_PATH}")
+
+
+def apply_key_hold_overlay(output_path, replay_path, ffmpeg_path):
+    if not KEY_HOLD_OVERLAY_ENABLED:
+        return
+    if ffmpeg_path is None:
+        fail("FFmpeg is required to render the key hold overlay.")
+
+    left_intervals, right_intervals = parse_key_hold_intervals(replay_path)
+    if not left_intervals and not right_intervals:
+        return
+
+    duration = probe_media_duration(output_path, find_existing_ffprobe(ffmpeg_path))
+    source_path = output_path.with_name(f"{output_path.stem}.danser{output_path.suffix}")
+    if source_path.exists():
+        source_path.unlink()
+    output_path.replace(source_path)
+
+    filter_graph = (
+        f"[0:v][1:v]overlay="
+        f"x={KEY_HOLD_OVERLAY_MARGIN_X}:"
+        f"y=H-h-{KEY_HOLD_OVERLAY_MARGIN_Y}:"
+        f"eof_action=pass:format=auto[v]"
+    )
+    command = [
+        str(ffmpeg_path),
+        "-y",
+        "-i",
+        str(source_path),
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "rgba",
+        "-s",
+        f"{KEY_HOLD_OVERLAY_WIDTH}x{KEY_HOLD_OVERLAY_HEIGHT}",
+        "-r",
+        str(KEY_HOLD_OVERLAY_FPS),
+        "-i",
+        "-",
+        "-filter_complex",
+        filter_graph,
+        "-map",
+        "[v]",
+        "-map",
+        "0:a?",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "faster",
+        "-crf",
+        "14",
+        "-pix_fmt",
+        "yuv420p",
+        "-c:a",
+        "copy",
+        "-movflags",
+        "+faststart",
+        str(output_path),
+    ]
+
+    error = None
+    with OVERLAY_LOG_PATH.open("w", encoding="utf-8", errors="replace") as log_handle:
+        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=log_handle, stderr=subprocess.STDOUT)
+        try:
+            write_key_hold_overlay_frames(process.stdin, duration, left_intervals, right_intervals)
+        except OSError as exc:
+            error = str(exc)
+        finally:
+            if process.stdin is not None:
+                process.stdin.close()
+        if process.wait() != 0 and error is None:
+            error = f"FFmpeg overlay failed.\nOverlay log: {OVERLAY_LOG_PATH}"
+
+    if error is not None or not output_path.exists():
+        if output_path.exists():
+            output_path.unlink()
+        if source_path.exists():
+            source_path.replace(output_path)
+        fail(error or f"Overlay output was not created.\nOverlay log: {OVERLAY_LOG_PATH}")
+
+    source_path.unlink()
+
+
+def find_existing_ffprobe(ffmpeg_path):
+    local_path = ffmpeg_path.with_name("ffprobe.exe")
+    if local_path.exists():
+        return local_path
+    path_name = shutil.which("ffprobe")
+    if path_name:
+        return Path(path_name)
+    fail("Could not find ffprobe for the key hold overlay.")
+
+
+def probe_media_duration(path, ffprobe_path):
+    result = subprocess.run(
+        [str(ffprobe_path), "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        fail(f"ffprobe could not read {path}.\n{result.stderr.strip()}")
+    payload = json.loads(result.stdout or "{}")
+    duration = float(as_dict(payload.get("format")).get("duration") or 0)
+    if duration <= 0:
+        fail(f"ffprobe did not return a valid duration for {path}.")
+    return duration
+
+
+def parse_key_hold_intervals(replay_path):
+    left_intervals = []
+    right_intervals = []
+    left_start = 0
+    right_start = 0
+    left_down = False
+    right_down = False
+    first_time = None
+    raw_time = 0
+    current_time = 0
+    replay_data = read_replay_data(replay_path)
+
+    for event in replay_data.split(","):
+        parts = event.split("|")
+        if len(parts) < 4:
+            continue
+        try:
+            delta = int(float(parts[0]))
+            keys = int(float(parts[3]))
+        except ValueError:
+            continue
+        if delta == -12345:
+            break
+        raw_time += delta
+        if first_time is None:
+            first_time = raw_time
+        current_time = max(0, raw_time - first_time)
+        left_now = bool(keys & KEY_HOLD_OVERLAY_LEFT_BITS)
+        right_now = bool(keys & KEY_HOLD_OVERLAY_RIGHT_BITS)
+        if left_now and not left_down:
+            left_start = current_time
+        if right_now and not right_down:
+            right_start = current_time
+        if left_down and not left_now:
+            left_intervals.append((left_start, current_time))
+        if right_down and not right_now:
+            right_intervals.append((right_start, current_time))
+        left_down = left_now
+        right_down = right_now
+
+    if left_down:
+        left_intervals.append((left_start, current_time))
+    if right_down:
+        right_intervals.append((right_start, current_time))
+    return left_intervals, right_intervals
+
+
+def read_replay_data(replay_path):
+    data = replay_path.read_bytes()
+    offset = 1 + 4
+    for _ in range(3):
+        _, offset = read_osu_string(data, offset)
+    offset += 6 * 2 + 4 + 2 + 1 + 4
+    _, offset = read_osu_string(data, offset)
+    offset += 8
+    replay_length = struct.unpack_from("<i", data, offset)[0]
+    offset += 4
+    return lzma.decompress(data[offset:offset + replay_length]).decode("utf-8", errors="replace")
+
+
+def read_osu_string(data, offset):
+    marker = data[offset]
+    offset += 1
+    if marker == 0:
+        return "", offset
+    if marker != 0x0B:
+        fail(f"Unexpected osu! string marker: {marker}")
+    length, offset = read_uleb128(data, offset)
+    value = data[offset:offset + length].decode("utf-8", errors="replace")
+    return value, offset + length
+
+
+def read_uleb128(data, offset):
+    value = 0
+    shift = 0
+    while True:
+        byte = data[offset]
+        offset += 1
+        value |= (byte & 0x7F) << shift
+        if byte < 0x80:
+            return value, offset
+        shift += 7
+
+
+def write_key_hold_overlay_frames(pipe, duration, left_intervals, right_intervals):
+    base_frame = create_key_hold_overlay_base()
+    left_index = 0
+    right_index = 0
+    frame_time_step = 1000 / KEY_HOLD_OVERLAY_FPS
+    frame_count = max(1, int(duration * KEY_HOLD_OVERLAY_FPS + 0.999))
+
+    for frame_index in range(frame_count):
+        frame_time = frame_index * frame_time_step
+        while left_index < len(left_intervals) and frame_time >= left_intervals[left_index][1]:
+            left_index += 1
+        while right_index < len(right_intervals) and frame_time >= right_intervals[right_index][1]:
+            right_index += 1
+
+        left_ms = 0
+        right_ms = 0
+        if left_index < len(left_intervals):
+            left_start, left_end = left_intervals[left_index]
+            if left_start <= frame_time < left_end:
+                left_ms = frame_time - left_start
+        if right_index < len(right_intervals):
+            right_start, right_end = right_intervals[right_index]
+            if right_start <= frame_time < right_end:
+                right_ms = frame_time - right_start
+
+        pipe.write(build_key_hold_overlay_frame(base_frame, left_ms, right_ms))
+
+
+def create_key_hold_overlay_base():
+    bar_left = 60
+    bar_top_offset = 3
+    bar_width = 186
+    bar_height = 22
+    key_left = 14
+    key_width = 34
+    key_height = 28
+    rows = ((12, "Z"), (50, "X"))
+    frame = bytearray(KEY_HOLD_OVERLAY_WIDTH * KEY_HOLD_OVERLAY_HEIGHT * 4)
+    fill_rect(frame, 0, 0, KEY_HOLD_OVERLAY_WIDTH, KEY_HOLD_OVERLAY_HEIGHT, KEY_HOLD_OVERLAY_PANEL)
+    for top, label in rows:
+        fill_rect(frame, key_left, top, key_width, key_height, KEY_HOLD_OVERLAY_KEY_IDLE)
+        fill_rect(frame, bar_left, top + bar_top_offset, bar_width, bar_height, KEY_HOLD_OVERLAY_BAR_BG)
+        draw_glyph(frame, 24, top + 4, label, KEY_HOLD_OVERLAY_TEXT, 3)
+    return bytes(frame)
+
+
+def build_key_hold_overlay_frame(base_frame, left_ms, right_ms):
+    frame = bytearray(base_frame)
+    draw_key_hold_row(frame, 12, "Z", KEY_HOLD_OVERLAY_LEFT_BAR, left_ms)
+    draw_key_hold_row(frame, 50, "X", KEY_HOLD_OVERLAY_RIGHT_BAR, right_ms)
+    return frame
+
+
+def draw_key_hold_row(frame, top, label, color, hold_ms):
+    if hold_ms <= 0:
+        return
+    bar_width = min(186, max(2, int(186 * hold_ms / KEY_HOLD_OVERLAY_MAX_MS)))
+    fill_rect(frame, 14, top, 34, 28, color)
+    fill_rect(frame, 60, top + 3, bar_width, 22, color)
+    draw_glyph(frame, 24, top + 4, label, KEY_HOLD_OVERLAY_TEXT, 3)
+
+
+def draw_glyph(frame, x, y, glyph, color, scale):
+    for row_index, row in enumerate(KEY_HOLD_OVERLAY_FONT[glyph]):
+        for col_index, cell in enumerate(row):
+            if cell == "1":
+                fill_rect(frame, x + col_index * scale, y + row_index * scale, scale, scale, color)
+
+
+def fill_rect(frame, x, y, width, height, color):
+    stride = KEY_HOLD_OVERLAY_WIDTH * 4
+    row = bytes(color) * width
+    for row_index in range(y, y + height):
+        start = row_index * stride + x * 4
+        frame[start:start + len(row)] = row
 
 
 def fetch_json(url, *, headers=None, data=None):
@@ -752,5 +1052,5 @@ def fail(message):
     print(message, file=sys.stderr)
     raise SystemExit(1)
 
-
-sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())
