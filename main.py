@@ -39,7 +39,7 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
-KEY_HOLD_OVERLAY_VERSION = 3
+KEY_HOLD_OVERLAY_VERSION = 4
 KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
 KEY_HOLD_OVERLAY_WIDTH = 180
@@ -54,11 +54,10 @@ KEY_HOLD_OVERLAY_RIGHT_BAR = (255, 141, 109, 235)
 KEY_HOLD_OVERLAY_TEXT = (255, 255, 255, 255)
 KEY_HOLD_OVERLAY_LEFT_BITS = 1 | 4
 KEY_HOLD_OVERLAY_RIGHT_BITS = 2 | 8
-KEY_HOLD_OVERLAY_TRACK_WIDTH = 316
-KEY_HOLD_OVERLAY_TRACK_HEIGHT = 20
-KEY_HOLD_OVERLAY_FADE_WIDTH = 84
 KEY_HOLD_OVERLAY_KEY_WIDTH = 32
 KEY_HOLD_OVERLAY_KEY_HEIGHT = 26
+KEY_HOLD_OVERLAY_TRACK_WIDTH = KEY_HOLD_OVERLAY_WIDTH - KEY_HOLD_OVERLAY_KEY_WIDTH
+KEY_HOLD_OVERLAY_TRACK_HEIGHT = 20
 KEY_HOLD_OVERLAY_ROW_TOPS = (12, 50)
 KEY_HOLD_OVERLAY_FONT = {
     "X": ("10001", "01010", "00100", "00100", "00100", "01010", "10001"),
@@ -911,14 +910,7 @@ def draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_t
     right = min(track_right, right)
     if right <= left:
         return
-    fade_right = min(track_right, track_left + KEY_HOLD_OVERLAY_FADE_WIDTH)
-    for x in range(left, right):
-        alpha = color[3]
-        if x < fade_right:
-            alpha = int(alpha * (x - track_left + 1) / KEY_HOLD_OVERLAY_FADE_WIDTH)
-        if alpha <= 0:
-            continue
-        fill_rect(frame, x, track_top, 1, KEY_HOLD_OVERLAY_TRACK_HEIGHT, (color[0], color[1], color[2], alpha))
+    fill_rect(frame, left, track_top, right - left, KEY_HOLD_OVERLAY_TRACK_HEIGHT, color)
 
 
 def draw_glyph(frame, x, y, glyph, color, scale):
