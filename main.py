@@ -44,8 +44,8 @@ KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
 KEY_HOLD_OVERLAY_WIDTH = 360
 KEY_HOLD_OVERLAY_HEIGHT = 88
-KEY_HOLD_OVERLAY_WINDOW_MS = 1400
-KEY_HOLD_OVERLAY_MARGIN_X = 30
+KEY_HOLD_OVERLAY_WINDOW_MS = 3100
+KEY_HOLD_OVERLAY_MARGIN_X = 10
 KEY_HOLD_OVERLAY_KEY_IDLE = (42, 47, 58, 220)
 KEY_HOLD_OVERLAY_TRACK_BG = (24, 27, 34, 150)
 KEY_HOLD_OVERLAY_LEFT_BAR = (96, 214, 255, 235)
@@ -55,6 +55,7 @@ KEY_HOLD_OVERLAY_LEFT_BITS = 1 | 4
 KEY_HOLD_OVERLAY_RIGHT_BITS = 2 | 8
 KEY_HOLD_OVERLAY_TRACK_WIDTH = 316
 KEY_HOLD_OVERLAY_TRACK_HEIGHT = 20
+KEY_HOLD_OVERLAY_FADE_WIDTH = 84
 KEY_HOLD_OVERLAY_KEY_WIDTH = 32
 KEY_HOLD_OVERLAY_KEY_HEIGHT = 26
 KEY_HOLD_OVERLAY_ROW_TOPS = (12, 50)
@@ -662,7 +663,7 @@ def apply_key_hold_overlay(output_path, replay_path, ffmpeg_path):
     filter_graph = (
         f"[0:v][1:v]overlay="
         f"x=W-w-{KEY_HOLD_OVERLAY_MARGIN_X}:"
-        f"y=H*0.75-h:"
+        f"y=H*0.80-h:"
         f"eof_action=pass:format=auto[v]"
     )
     command = [
@@ -897,7 +898,14 @@ def draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_t
     right = min(track_right, right)
     if right <= left:
         return
-    fill_rect(frame, left, track_top, right - left, KEY_HOLD_OVERLAY_TRACK_HEIGHT, color)
+    fade_right = min(track_right, track_left + KEY_HOLD_OVERLAY_FADE_WIDTH)
+    for x in range(left, right):
+        alpha = color[3]
+        if x < fade_right:
+            alpha = int(alpha * (x - track_left + 1) / KEY_HOLD_OVERLAY_FADE_WIDTH)
+        if alpha <= 0:
+            continue
+        fill_rect(frame, x, track_top, 1, KEY_HOLD_OVERLAY_TRACK_HEIGHT, (color[0], color[1], color[2], alpha))
 
 
 def draw_glyph(frame, x, y, glyph, color, scale):
