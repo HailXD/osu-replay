@@ -35,6 +35,7 @@ DEFAULT_FPS = 60
 DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
+DEFAULT_INCLUDE_BEATMAP_VIDEO = False
 OUTPUT_METADATA_DIR_NAME = ".render-metadata"
 OUTPUT_METADATA_SUFFIX = ".render.json"
 EXTRACT_CACHE_NAME = ".extract-cache.json"
@@ -221,39 +222,47 @@ def download_replay(access_token, score):
 
 def download_beatmap_archive(score):
     safe_name = sanitize_name(f"{score['beatmapset_id']} {score['artist']} - {score['title']}")
-    archive_variant = "video" if score["has_video"] else "no-video"
-    destination = DOWNLOADS_DIR / f"{safe_name} [{archive_variant}].osz"
-    if is_cached_file(destination):
-        print(f"Using cached beatmapset {score['beatmapset_id']}...")
-        return destination
-
-    video_label = "with video" if score["has_video"] else "without video"
-    print(f"Downloading beatmapset {score['beatmapset_id']} {video_label}...")
     official_cookie = os.environ.get("OSU_SESSION", "").strip()
-
-    attempts = []
-    if official_cookie:
-        attempts.append(
-            (
-                build_official_beatmap_download_url(score),
-                {"Cookie": f"osu_session={official_cookie}"},
-            )
-        )
-    attempts.append((build_catboy_download_url(score), {}))
-    attempts.append((f"https://api.nerinyan.moe/d/{score['beatmapset_id']}", {}))
-
     errors = []
-    for url, headers in attempts:
-        try:
-            download_to_file(
-                url=url,
-                destination=destination,
-                headers=headers,
-                accepted_content_types=("application/x-osu-beatmap-archive", "application/octet-stream", "application/zip"),
-            )
+    include_video_options = [DEFAULT_INCLUDE_BEATMAP_VIDEO]
+    if score["has_video"] and DEFAULT_INCLUDE_BEATMAP_VIDEO != score["has_video"]:
+        include_video_options.append(score["has_video"])
+
+    for include_video in include_video_options:
+        archive_variant = "video" if include_video else "no-video"
+        destination = DOWNLOADS_DIR / f"{safe_name} [{archive_variant}].osz"
+        if is_cached_file(destination):
+            print(f"Using cached beatmapset {score['beatmapset_id']}...")
             return destination
-        except RuntimeError as error:
-            errors.append(f"{url}: {error}")
+
+        video_label = "with video" if include_video else "without video"
+        print(f"Downloading beatmapset {score['beatmapset_id']} {video_label}...")
+        attempts = []
+        if official_cookie:
+            attempts.append(
+                (
+                    build_official_beatmap_download_url(score, include_video),
+                    {"Cookie": f"osu_session={official_cookie}"},
+                )
+            )
+        attempts.append((build_catboy_download_url(score, include_video), {}))
+        if include_video:
+            attempts.append((f"https://api.nerinyan.moe/d/{score['beatmapset_id']}", {}))
+
+        variant_errors = []
+        for url, headers in attempts:
+            try:
+                download_to_file(
+                    url=url,
+                    destination=destination,
+                    headers=headers,
+                    accepted_content_types=("application/x-osu-beatmap-archive", "application/octet-stream", "application/zip"),
+                )
+                return destination
+            except RuntimeError as error:
+                variant_errors.append(f"{url}: {error}")
+
+        errors.append(f"{video_label}:\n" + "\n".join(variant_errors))
 
     fail("Beatmap download failed.\n" + "\n".join(errors))
 
@@ -658,15 +667,15 @@ def content_type_matches(content_type, accepted):
     return any(normalized == value or normalized.startswith(f"{value};") for value in accepted)
 
 
-def build_official_beatmap_download_url(score):
+def build_official_beatmap_download_url(score, include_video):
     url = OSU_BEATMAP_DOWNLOAD_URL.format(beatmapset_id=score["beatmapset_id"])
-    if score["has_video"]:
+    if include_video:
         return url
     return f"{url}?noVideo=1"
 
 
-def build_catboy_download_url(score):
-    suffix = "" if score["has_video"] else "n"
+def build_catboy_download_url(score, include_video):
+    suffix = "" if include_video else "n"
     return f"https://catboy.best/d/{score['beatmapset_id']}{suffix}"
 
 
