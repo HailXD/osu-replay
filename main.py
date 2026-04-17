@@ -39,22 +39,25 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
-KEY_HOLD_OVERLAY_VERSION = 1
+KEY_HOLD_OVERLAY_VERSION = 2
 KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
-KEY_HOLD_OVERLAY_WIDTH = 260
-KEY_HOLD_OVERLAY_HEIGHT = 90
-KEY_HOLD_OVERLAY_MAX_MS = 250
-KEY_HOLD_OVERLAY_MARGIN_X = 70
-KEY_HOLD_OVERLAY_MARGIN_Y = 70
-KEY_HOLD_OVERLAY_PANEL = (14, 16, 22, 170)
+KEY_HOLD_OVERLAY_WIDTH = 360
+KEY_HOLD_OVERLAY_HEIGHT = 88
+KEY_HOLD_OVERLAY_WINDOW_MS = 1400
+KEY_HOLD_OVERLAY_MARGIN_X = 30
 KEY_HOLD_OVERLAY_KEY_IDLE = (42, 47, 58, 220)
-KEY_HOLD_OVERLAY_BAR_BG = (42, 47, 58, 180)
+KEY_HOLD_OVERLAY_TRACK_BG = (24, 27, 34, 150)
 KEY_HOLD_OVERLAY_LEFT_BAR = (96, 214, 255, 235)
 KEY_HOLD_OVERLAY_RIGHT_BAR = (255, 141, 109, 235)
 KEY_HOLD_OVERLAY_TEXT = (255, 255, 255, 255)
 KEY_HOLD_OVERLAY_LEFT_BITS = 1 | 4
 KEY_HOLD_OVERLAY_RIGHT_BITS = 2 | 8
+KEY_HOLD_OVERLAY_TRACK_WIDTH = 316
+KEY_HOLD_OVERLAY_TRACK_HEIGHT = 20
+KEY_HOLD_OVERLAY_KEY_WIDTH = 32
+KEY_HOLD_OVERLAY_KEY_HEIGHT = 26
+KEY_HOLD_OVERLAY_ROW_TOPS = (12, 50)
 KEY_HOLD_OVERLAY_FONT = {
     "X": ("10001", "01010", "00100", "00100", "00100", "01010", "10001"),
     "Z": ("11111", "00010", "00100", "00100", "01000", "10000", "11111"),
@@ -550,7 +553,7 @@ def build_render_metadata(score, danser_install, settings_path):
         "version": KEY_HOLD_OVERLAY_VERSION,
         "fps": KEY_HOLD_OVERLAY_FPS,
         "size": [KEY_HOLD_OVERLAY_WIDTH, KEY_HOLD_OVERLAY_HEIGHT],
-        "max_ms": KEY_HOLD_OVERLAY_MAX_MS,
+        "window_ms": KEY_HOLD_OVERLAY_WINDOW_MS,
     }
     return {
         "score_id": score["score_id"],
@@ -658,8 +661,8 @@ def apply_key_hold_overlay(output_path, replay_path, ffmpeg_path):
 
     filter_graph = (
         f"[0:v][1:v]overlay="
-        f"x={KEY_HOLD_OVERLAY_MARGIN_X}:"
-        f"y=H-h-{KEY_HOLD_OVERLAY_MARGIN_Y}:"
+        f"x=W-w-{KEY_HOLD_OVERLAY_MARGIN_X}:"
+        f"y=H*0.75-h:"
         f"eof_action=pass:format=auto[v]"
     )
     command = [
@@ -833,64 +836,68 @@ def read_uleb128(data, offset):
 
 def write_key_hold_overlay_frames(pipe, duration, left_intervals, right_intervals):
     base_frame = create_key_hold_overlay_base()
-    left_index = 0
-    right_index = 0
     frame_time_step = 1000 / KEY_HOLD_OVERLAY_FPS
     frame_count = max(1, int(duration * KEY_HOLD_OVERLAY_FPS + 0.999))
 
     for frame_index in range(frame_count):
         frame_time = frame_index * frame_time_step
-        while left_index < len(left_intervals) and frame_time >= left_intervals[left_index][1]:
-            left_index += 1
-        while right_index < len(right_intervals) and frame_time >= right_intervals[right_index][1]:
-            right_index += 1
-
-        left_ms = 0
-        right_ms = 0
-        if left_index < len(left_intervals):
-            left_start, left_end = left_intervals[left_index]
-            if left_start <= frame_time < left_end:
-                left_ms = frame_time - left_start
-        if right_index < len(right_intervals):
-            right_start, right_end = right_intervals[right_index]
-            if right_start <= frame_time < right_end:
-                right_ms = frame_time - right_start
-
-        pipe.write(build_key_hold_overlay_frame(base_frame, left_ms, right_ms))
+        pipe.write(build_key_hold_overlay_frame(base_frame, frame_time, left_intervals, right_intervals))
 
 
 def create_key_hold_overlay_base():
-    bar_left = 60
-    bar_top_offset = 3
-    bar_width = 186
-    bar_height = 22
-    key_left = 14
-    key_width = 34
-    key_height = 28
-    rows = ((12, "Z"), (50, "X"))
     frame = bytearray(KEY_HOLD_OVERLAY_WIDTH * KEY_HOLD_OVERLAY_HEIGHT * 4)
-    fill_rect(frame, 0, 0, KEY_HOLD_OVERLAY_WIDTH, KEY_HOLD_OVERLAY_HEIGHT, KEY_HOLD_OVERLAY_PANEL)
-    for top, label in rows:
-        fill_rect(frame, key_left, top, key_width, key_height, KEY_HOLD_OVERLAY_KEY_IDLE)
-        fill_rect(frame, bar_left, top + bar_top_offset, bar_width, bar_height, KEY_HOLD_OVERLAY_BAR_BG)
-        draw_glyph(frame, 24, top + 4, label, KEY_HOLD_OVERLAY_TEXT, 3)
+    draw_key_hold_lane_base(frame, KEY_HOLD_OVERLAY_ROW_TOPS[0], "Z")
+    draw_key_hold_lane_base(frame, KEY_HOLD_OVERLAY_ROW_TOPS[1], "X")
     return bytes(frame)
 
 
-def build_key_hold_overlay_frame(base_frame, left_ms, right_ms):
+def build_key_hold_overlay_frame(base_frame, frame_time, left_intervals, right_intervals):
     frame = bytearray(base_frame)
-    draw_key_hold_row(frame, 12, "Z", KEY_HOLD_OVERLAY_LEFT_BAR, left_ms)
-    draw_key_hold_row(frame, 50, "X", KEY_HOLD_OVERLAY_RIGHT_BAR, right_ms)
+    draw_key_hold_lane(frame, KEY_HOLD_OVERLAY_ROW_TOPS[0], "Z", KEY_HOLD_OVERLAY_LEFT_BAR, left_intervals, frame_time)
+    draw_key_hold_lane(frame, KEY_HOLD_OVERLAY_ROW_TOPS[1], "X", KEY_HOLD_OVERLAY_RIGHT_BAR, right_intervals, frame_time)
     return frame
 
 
-def draw_key_hold_row(frame, top, label, color, hold_ms):
-    if hold_ms <= 0:
+def draw_key_hold_lane_base(frame, top, label):
+    key_left = KEY_HOLD_OVERLAY_WIDTH - KEY_HOLD_OVERLAY_KEY_WIDTH
+    track_left = key_left - KEY_HOLD_OVERLAY_TRACK_WIDTH
+    track_top = top + (KEY_HOLD_OVERLAY_KEY_HEIGHT - KEY_HOLD_OVERLAY_TRACK_HEIGHT) // 2
+    fill_rect(frame, track_left, track_top, KEY_HOLD_OVERLAY_TRACK_WIDTH, KEY_HOLD_OVERLAY_TRACK_HEIGHT, KEY_HOLD_OVERLAY_TRACK_BG)
+    fill_rect(frame, key_left, top, KEY_HOLD_OVERLAY_KEY_WIDTH, KEY_HOLD_OVERLAY_KEY_HEIGHT, KEY_HOLD_OVERLAY_KEY_IDLE)
+    draw_glyph(frame, key_left + 8, top + 3, label, KEY_HOLD_OVERLAY_TEXT, 3)
+
+
+def draw_key_hold_lane(frame, top, label, color, intervals, frame_time):
+    key_left = KEY_HOLD_OVERLAY_WIDTH - KEY_HOLD_OVERLAY_KEY_WIDTH
+    track_left = key_left - KEY_HOLD_OVERLAY_TRACK_WIDTH
+    track_right = key_left
+    track_top = top + (KEY_HOLD_OVERLAY_KEY_HEIGHT - KEY_HOLD_OVERLAY_TRACK_HEIGHT) // 2
+    active = False
+
+    for start, end in intervals:
+        if frame_time < start:
+            break
+        if frame_time - end >= KEY_HOLD_OVERLAY_WINDOW_MS:
+            continue
+        if start <= frame_time < end:
+            active = True
+        draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_time, start, end)
+
+    if active:
+        fill_rect(frame, key_left, top, KEY_HOLD_OVERLAY_KEY_WIDTH, KEY_HOLD_OVERLAY_KEY_HEIGHT, color)
+        draw_glyph(frame, key_left + 8, top + 3, label, KEY_HOLD_OVERLAY_TEXT, 3)
+
+
+def draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_time, start, end):
+    px_per_ms = KEY_HOLD_OVERLAY_TRACK_WIDTH / KEY_HOLD_OVERLAY_WINDOW_MS
+    left = int(track_right - (frame_time - start) * px_per_ms)
+    right_time = end if frame_time >= end else frame_time
+    right = int(track_right - (frame_time - right_time) * px_per_ms)
+    left = max(track_left, left)
+    right = min(track_right, right)
+    if right <= left:
         return
-    bar_width = min(186, max(2, int(186 * hold_ms / KEY_HOLD_OVERLAY_MAX_MS)))
-    fill_rect(frame, 14, top, 34, 28, color)
-    fill_rect(frame, 60, top + 3, bar_width, 22, color)
-    draw_glyph(frame, 24, top + 4, label, KEY_HOLD_OVERLAY_TEXT, 3)
+    fill_rect(frame, left, track_top, right - left, KEY_HOLD_OVERLAY_TRACK_HEIGHT, color)
 
 
 def draw_glyph(frame, x, y, glyph, color, scale):
