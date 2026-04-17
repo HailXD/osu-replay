@@ -39,13 +39,12 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
-KEY_HOLD_OVERLAY_VERSION = 5
+KEY_HOLD_OVERLAY_VERSION = 6
 KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
 KEY_HOLD_OVERLAY_WIDTH = 180
 KEY_HOLD_OVERLAY_HEIGHT = 88
 KEY_HOLD_OVERLAY_WINDOW_MS = 3100
-KEY_HOLD_OVERLAY_FIRST_PRESS_MS = 6600
 KEY_HOLD_OVERLAY_MARGIN_X = 10
 KEY_HOLD_OVERLAY_KEY_IDLE = (42, 47, 58, 220)
 KEY_HOLD_OVERLAY_TRACK_BG = (24, 27, 34, 150)
@@ -59,6 +58,11 @@ KEY_HOLD_OVERLAY_KEY_HEIGHT = 26
 KEY_HOLD_OVERLAY_TRACK_WIDTH = KEY_HOLD_OVERLAY_WIDTH - KEY_HOLD_OVERLAY_KEY_WIDTH
 KEY_HOLD_OVERLAY_TRACK_HEIGHT = 20
 KEY_HOLD_OVERLAY_ROW_TOPS = (12, 50)
+MOD_EASY = 1 << 1
+MOD_HARD_ROCK = 1 << 4
+MOD_DOUBLE_TIME = 1 << 6
+MOD_HALF_TIME = 1 << 8
+MOD_NIGHTCORE = 1 << 9
 KEY_HOLD_OVERLAY_FONT = {
     "X": ("10001", "01010", "00100", "00100", "00100", "01010", "10001"),
     "Z": ("11111", "00010", "00100", "00100", "01000", "10000", "11111"),
@@ -120,7 +124,7 @@ def main():
     if not output_path.exists():
         fail(f"Danser finished but the output file was not created: {output_path}")
 
-    apply_key_hold_overlay(output_path, replay_path, danser_install["ffmpeg"])
+    apply_key_hold_overlay(output_path, replay_path, score, danser_install["ffmpeg"])
     write_render_metadata(output_path, render_metadata)
     print(f"Replay saved to: {output_path}")
     return 0
@@ -644,13 +648,14 @@ def render_replay(danser_install, settings_path, replay_path, output_stem, skin_
     print(f"Render log saved to: {RENDER_LOG_PATH}")
 
 
-def apply_key_hold_overlay(output_path, replay_path, ffmpeg_path):
+def apply_key_hold_overlay(output_path, replay_path, score, ffmpeg_path):
     if not KEY_HOLD_OVERLAY_ENABLED:
         return
     if ffmpeg_path is None:
         fail("FFmpeg is required to render the key hold overlay.")
 
-    left_intervals, right_intervals = parse_key_hold_intervals(replay_path)
+    start_time = get_key_hold_overlay_start_time(score, replay_path)
+    left_intervals, right_intervals = parse_key_hold_intervals(replay_path, start_time)
     if not left_intervals and not right_intervals:
         return
 
@@ -751,7 +756,7 @@ def probe_media_duration(path, ffprobe_path):
     return duration
 
 
-def parse_key_hold_intervals(replay_path):
+def parse_key_hold_intervals(replay_path, start_time):
     left_intervals = []
     right_intervals = []
     left_start = 0
@@ -793,18 +798,75 @@ def parse_key_hold_intervals(replay_path):
     if right_down:
         right_intervals.append((right_start, current_time))
 
-    all_intervals = left_intervals + right_intervals
-    if not all_intervals:
-        return left_intervals, right_intervals
-
-    first_press = min(start for start, _ in all_intervals)
-    shift = first_press - KEY_HOLD_OVERLAY_FIRST_PRESS_MS
-    if shift == 0:
-        return left_intervals, right_intervals
-
-    left_intervals = [(start - shift, end - shift) for start, end in left_intervals]
-    right_intervals = [(start - shift, end - shift) for start, end in right_intervals]
+    left_intervals = clip_key_hold_intervals(left_intervals, start_time)
+    right_intervals = clip_key_hold_intervals(right_intervals, start_time)
     return left_intervals, right_intervals
+
+
+def get_key_hold_overlay_start_time(score, replay_path):
+    beatmap_path = find_score_beatmap_path(score)
+    first_hitobject_time, approach_rate = read_beatmap_overlay_timing(beatmap_path)
+    preempt_time = get_preempt_time(approach_rate, read_replay_mods(replay_path))
+    return max(0, int(first_hitobject_time - preempt_time))
+
+
+def find_score_beatmap_path(score):
+    songs_path = SONGS_DIR / sanitize_name(f"{score['beatmapset_id']} {score['artist']} - {score['title']}")
+    for beatmap_path in songs_path.rglob("*.osu"):
+        for raw_line in beatmap_path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if raw_line.startswith("BeatmapID:") and as_int(raw_line.split(":", 1)[1]) == score["beatmap_id"]:
+                return beatmap_path
+    fail(f"Could not find beatmap {score['beatmap_id']} in {songs_path}.")
+
+
+def read_beatmap_overlay_timing(beatmap_path):
+    section = ""
+    approach_rate = 5
+    first_hitobject_time = None
+    for raw_line in beatmap_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("//"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line
+            continue
+        if section == "[Difficulty]" and line.startswith("ApproachRate:"):
+            approach_rate = float(line.split(":", 1)[1].strip())
+            continue
+        if section == "[HitObjects]":
+            parts = line.split(",", 3)
+            if len(parts) >= 3:
+                first_hitobject_time = int(float(parts[2]))
+                break
+    if first_hitobject_time is None:
+        fail(f"Could not find hit objects in {beatmap_path}.")
+    return first_hitobject_time, approach_rate
+
+
+def get_preempt_time(approach_rate, mods):
+    if mods & MOD_EASY:
+        approach_rate *= 0.5
+    if mods & MOD_HARD_ROCK:
+        approach_rate *= 1.4
+    approach_rate = max(0, min(10, approach_rate))
+    if approach_rate > 5:
+        preempt_time = 1200 - (approach_rate - 5) * 150
+    else:
+        preempt_time = 1800 - approach_rate * 120
+    if mods & (MOD_DOUBLE_TIME | MOD_NIGHTCORE):
+        return preempt_time / 1.5
+    if mods & MOD_HALF_TIME:
+        return preempt_time / 0.75
+    return preempt_time
+
+
+def clip_key_hold_intervals(intervals, start_time):
+    clipped = []
+    for start, end in intervals:
+        if end <= start_time:
+            continue
+        clipped.append((max(0, start - start_time), end - start_time))
+    return clipped
 
 
 def read_replay_data(replay_path):
@@ -818,6 +880,15 @@ def read_replay_data(replay_path):
     replay_length = struct.unpack_from("<i", data, offset)[0]
     offset += 4
     return lzma.decompress(data[offset:offset + replay_length]).decode("utf-8", errors="replace")
+
+
+def read_replay_mods(replay_path):
+    data = replay_path.read_bytes()
+    offset = 1 + 4
+    for _ in range(3):
+        _, offset = read_osu_string(data, offset)
+    offset += 6 * 2 + 4 + 2 + 1
+    return struct.unpack_from("<i", data, offset)[0]
 
 
 def read_osu_string(data, offset):
