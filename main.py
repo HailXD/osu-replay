@@ -39,17 +39,18 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
-KEY_HOLD_OVERLAY_VERSION = 8
+KEY_HOLD_OVERLAY_VERSION = 9
 KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
 KEY_HOLD_OVERLAY_WIDTH = 180
 KEY_HOLD_OVERLAY_HEIGHT = 88
 KEY_HOLD_OVERLAY_WINDOW_MS = 3100
+KEY_HOLD_OVERLAY_SPEED = 1.5
+KEY_HOLD_OVERLAY_TRAVEL_MS = KEY_HOLD_OVERLAY_WINDOW_MS / KEY_HOLD_OVERLAY_SPEED
 KEY_HOLD_OVERLAY_FIRST_PRESS_MS = 6600
 KEY_HOLD_OVERLAY_VALID_PRESS_PAD_MS = 24
 KEY_HOLD_OVERLAY_MARGIN_X = 10
 KEY_HOLD_OVERLAY_KEY_IDLE = (42, 47, 58, 220)
-KEY_HOLD_OVERLAY_TRACK_BG = (24, 27, 34, 150)
 KEY_HOLD_OVERLAY_LEFT_BAR = (96, 214, 255, 235)
 KEY_HOLD_OVERLAY_RIGHT_BAR = (255, 141, 109, 235)
 KEY_HOLD_OVERLAY_TEXT = (255, 255, 255, 255)
@@ -59,6 +60,7 @@ KEY_HOLD_OVERLAY_KEY_WIDTH = 32
 KEY_HOLD_OVERLAY_KEY_HEIGHT = 26
 KEY_HOLD_OVERLAY_TRACK_WIDTH = KEY_HOLD_OVERLAY_WIDTH - KEY_HOLD_OVERLAY_KEY_WIDTH
 KEY_HOLD_OVERLAY_TRACK_HEIGHT = 20
+KEY_HOLD_OVERLAY_FADE_OUT_RATIO = 0.075
 KEY_HOLD_OVERLAY_ROW_TOPS = (12, 50)
 MOD_EASY = 1 << 1
 MOD_HARD_ROCK = 1 << 4
@@ -965,9 +967,6 @@ def build_key_hold_overlay_frame(base_frame, frame_time, left_intervals, right_i
 
 def draw_key_hold_lane_base(frame, top, label):
     key_left = KEY_HOLD_OVERLAY_WIDTH - KEY_HOLD_OVERLAY_KEY_WIDTH
-    track_left = key_left - KEY_HOLD_OVERLAY_TRACK_WIDTH
-    track_top = top + (KEY_HOLD_OVERLAY_KEY_HEIGHT - KEY_HOLD_OVERLAY_TRACK_HEIGHT) // 2
-    fill_rect(frame, track_left, track_top, KEY_HOLD_OVERLAY_TRACK_WIDTH, KEY_HOLD_OVERLAY_TRACK_HEIGHT, KEY_HOLD_OVERLAY_TRACK_BG)
     fill_rect(frame, key_left, top, KEY_HOLD_OVERLAY_KEY_WIDTH, KEY_HOLD_OVERLAY_KEY_HEIGHT, KEY_HOLD_OVERLAY_KEY_IDLE)
     draw_glyph(frame, key_left + 8, top + 3, label, KEY_HOLD_OVERLAY_TEXT, 3)
 
@@ -982,7 +981,7 @@ def draw_key_hold_lane(frame, top, label, color, intervals, frame_time):
     for start, end in intervals:
         if frame_time < start:
             break
-        if frame_time - end >= KEY_HOLD_OVERLAY_WINDOW_MS:
+        if frame_time - end >= KEY_HOLD_OVERLAY_TRAVEL_MS:
             continue
         if start <= frame_time < end:
             active = True
@@ -994,7 +993,7 @@ def draw_key_hold_lane(frame, top, label, color, intervals, frame_time):
 
 
 def draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_time, start, end):
-    px_per_ms = KEY_HOLD_OVERLAY_TRACK_WIDTH / KEY_HOLD_OVERLAY_WINDOW_MS
+    px_per_ms = KEY_HOLD_OVERLAY_TRACK_WIDTH / KEY_HOLD_OVERLAY_TRAVEL_MS
     left = int(track_right - (frame_time - start) * px_per_ms)
     right_time = end if frame_time >= end else frame_time
     right = int(track_right - (frame_time - right_time) * px_per_ms)
@@ -1002,6 +1001,16 @@ def draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_t
     right = min(track_right, right)
     if right <= left:
         return
+    fade_width = int(KEY_HOLD_OVERLAY_TRACK_WIDTH * KEY_HOLD_OVERLAY_FADE_OUT_RATIO)
+    visible_width = right - track_left
+    if fade_width > 0 and visible_width < fade_width:
+        fade = visible_width / fade_width
+        color = (
+            int(color[0] * fade),
+            int(color[1] * fade),
+            int(color[2] * fade),
+            color[3],
+        )
     fill_rect(frame, left, track_top, right - left, KEY_HOLD_OVERLAY_TRACK_HEIGHT, color)
 
 
