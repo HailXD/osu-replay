@@ -4,8 +4,8 @@ import lzma
 import os
 import re
 import shutil
-import subprocess
 import struct
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -39,7 +39,7 @@ DEFAULT_CONTAINER = "mp4"
 DEFAULT_SKIN_INPUT = str(Path("skin") / "DT Pastel")
 DEFAULT_BACKGROUND_DIM = 0.7
 DEFAULT_INCLUDE_BEATMAP_VIDEO = False
-KEY_HOLD_OVERLAY_VERSION = 9
+KEY_HOLD_OVERLAY_VERSION = 10
 KEY_HOLD_OVERLAY_ENABLED = True
 KEY_HOLD_OVERLAY_FPS = 60
 KEY_HOLD_OVERLAY_WIDTH = 180
@@ -47,7 +47,7 @@ KEY_HOLD_OVERLAY_HEIGHT = 88
 KEY_HOLD_OVERLAY_WINDOW_MS = 3100
 KEY_HOLD_OVERLAY_SPEED = 3
 KEY_HOLD_OVERLAY_TRAVEL_MS = KEY_HOLD_OVERLAY_WINDOW_MS / KEY_HOLD_OVERLAY_SPEED
-KEY_HOLD_OVERLAY_FIRST_PRESS_MS = 6600
+KEY_HOLD_OVERLAY_FIRST_HITOBJECT_MS = 6600
 KEY_HOLD_OVERLAY_VALID_PRESS_PAD_MS = 24
 KEY_HOLD_OVERLAY_MARGIN_X = 10
 KEY_HOLD_OVERLAY_KEY_IDLE = (42, 47, 58, 220)
@@ -82,6 +82,7 @@ RULESET_BY_ID = {
     3: "mania",
 }
 
+
 def main():
     load_dotenv_file()
     ensure_directories()
@@ -103,7 +104,9 @@ def main():
     danser_install = prepare_danser_runtime(ensure_danser_install())
     encoder = choose_encoder(danser_install["ffmpeg"])
     skin_path = parse_skin_path("")
-    settings_path = write_danser_settings(danser_install["directory"], encoder, skin_path)
+    settings_path = write_danser_settings(
+        danser_install["directory"], encoder, skin_path
+    )
     render_metadata = build_render_metadata(score, danser_install, settings_path)
     existing_output = find_existing_render(score, render_metadata)
     if existing_output is not None:
@@ -135,7 +138,14 @@ def main():
 
 
 def ensure_directories():
-    for directory in (VENDOR_DIR, DOWNLOADS_DIR, SONGS_DIR, REPLAYS_DIR, DANSER_RUNTIME_DIR, OUTPUT_DIR):
+    for directory in (
+        VENDOR_DIR,
+        DOWNLOADS_DIR,
+        SONGS_DIR,
+        REPLAYS_DIR,
+        DANSER_RUNTIME_DIR,
+        OUTPUT_DIR,
+    ):
         directory.mkdir(parents=True, exist_ok=True)
 
 
@@ -203,12 +213,21 @@ def fetch_access_token(client_id, client_secret):
 
 def parse_score_info(payload, requested_score_id):
     beatmap = as_dict(payload.get("beatmap"))
-    beatmapset = as_dict(payload.get("beatmapset")) or as_dict(beatmap.get("beatmapset"))
+    beatmapset = as_dict(payload.get("beatmapset")) or as_dict(
+        beatmap.get("beatmapset")
+    )
     user = as_dict(payload.get("user"))
 
     beatmap_id = as_int(beatmap.get("id"))
     beatmapset_id = as_int(beatmapset.get("id") or beatmap.get("beatmapset_id"))
-    mode = str(payload.get("mode") or RULESET_BY_ID.get(as_int(payload.get("ruleset_id")), "")).strip().lower()
+    mode = (
+        str(
+            payload.get("mode")
+            or RULESET_BY_ID.get(as_int(payload.get("ruleset_id")), "")
+        )
+        .strip()
+        .lower()
+    )
     has_video = as_bool(beatmapset.get("video"))
     artist = str(beatmapset.get("artist") or "unknown artist").strip()
     title = str(beatmapset.get("title") or "unknown title").strip()
@@ -237,7 +256,9 @@ def parse_score_info(payload, requested_score_id):
 
 def ensure_supported_mode(score):
     if score["mode"] != "osu":
-        fail(f"danser only supports osu!standard replays. This score is '{score['mode']}'.")
+        fail(
+            f"danser only supports osu!standard replays. This score is '{score['mode']}'."
+        )
 
 
 def download_replay(access_token, score):
@@ -257,7 +278,9 @@ def download_replay(access_token, score):
 
 
 def download_beatmap_archive(score):
-    safe_name = sanitize_name(f"{score['beatmapset_id']} {score['artist']} - {score['title']}")
+    safe_name = sanitize_name(
+        f"{score['beatmapset_id']} {score['artist']} - {score['title']}"
+    )
     official_cookie = os.environ.get("OSU_SESSION", "").strip()
     errors = []
     include_video_options = [DEFAULT_INCLUDE_BEATMAP_VIDEO]
@@ -283,7 +306,9 @@ def download_beatmap_archive(score):
             )
         attempts.append((build_catboy_download_url(score, include_video), {}))
         if include_video:
-            attempts.append((f"https://api.nerinyan.moe/d/{score['beatmapset_id']}", {}))
+            attempts.append(
+                (f"https://api.nerinyan.moe/d/{score['beatmapset_id']}", {})
+            )
 
         variant_errors = []
         for url, headers in attempts:
@@ -292,7 +317,11 @@ def download_beatmap_archive(score):
                     url=url,
                     destination=destination,
                     headers=headers,
-                    accepted_content_types=("application/x-osu-beatmap-archive", "application/octet-stream", "application/zip"),
+                    accepted_content_types=(
+                        "application/x-osu-beatmap-archive",
+                        "application/octet-stream",
+                        "application/zip",
+                    ),
                 )
                 return destination
             except RuntimeError as error:
@@ -304,7 +333,9 @@ def download_beatmap_archive(score):
 
 
 def extract_beatmap_archive(archive_path, score):
-    destination = SONGS_DIR / sanitize_name(f"{score['beatmapset_id']} {score['artist']} - {score['title']}")
+    destination = SONGS_DIR / sanitize_name(
+        f"{score['beatmapset_id']} {score['artist']} - {score['title']}"
+    )
     cache_path = destination / EXTRACT_CACHE_NAME
     archive_cache = build_archive_cache_payload(archive_path)
 
@@ -327,7 +358,9 @@ def extract_beatmap_archive(archive_path, score):
 
     osu_files = list(destination.rglob("*.osu"))
     if not osu_files:
-        fail("The beatmap archive extracted successfully but did not contain any .osu files.")
+        fail(
+            "The beatmap archive extracted successfully but did not contain any .osu files."
+        )
 
     cache_path.write_text(json.dumps(archive_cache, indent=2), encoding="utf-8")
     return destination
@@ -381,7 +414,9 @@ def prepare_danser_runtime(source_install):
         shutil.copytree(source_install["directory"], runtime_dir)
         executable = find_existing_danser(runtime_dir)
         if executable is None:
-            fail(f"danser runtime {source_install['version']} is missing danser-cli.exe.")
+            fail(
+                f"danser runtime {source_install['version']} is missing danser-cli.exe."
+            )
 
     ffmpeg = find_existing_ffmpeg(runtime_dir)
     return {
@@ -476,7 +511,9 @@ def write_danser_settings(danser_directory, encoder, skin_path):
 
     general = {
         "OsuSongsDir": str(SONGS_DIR),
-        "OsuSkinsDir": str(skin_path.parent if skin_path else danser_directory / "skins"),
+        "OsuSkinsDir": str(
+            skin_path.parent if skin_path else danser_directory / "skins"
+        ),
         "OsuReplaysDir": str(REPLAYS_DIR),
         "DiscordPresenceOn": False,
         "UnpackOszFiles": True,
@@ -592,7 +629,10 @@ def write_render_metadata(output_path, render_metadata):
 
 
 def read_render_metadata(output_path):
-    metadata_paths = (get_render_metadata_path(output_path), get_legacy_render_metadata_path(output_path))
+    metadata_paths = (
+        get_render_metadata_path(output_path),
+        get_legacy_render_metadata_path(output_path),
+    )
     for metadata_path in metadata_paths:
         if not metadata_path.exists():
             continue
@@ -609,7 +649,11 @@ def read_render_metadata(output_path):
 
 
 def get_render_metadata_path(output_path):
-    return output_path.parent / OUTPUT_METADATA_DIR_NAME / f"{output_path.name}{OUTPUT_METADATA_SUFFIX}"
+    return (
+        output_path.parent
+        / OUTPUT_METADATA_DIR_NAME
+        / f"{output_path.name}{OUTPUT_METADATA_SUFFIX}"
+    )
 
 
 def get_legacy_render_metadata_path(output_path):
@@ -661,17 +705,25 @@ def apply_key_hold_overlay(output_path, replay_path, score, ffmpeg_path):
     mods = read_replay_mods(replay_path)
     speed = get_replay_speed(mods)
     left_intervals, right_intervals = parse_key_hold_intervals(replay_path, speed)
-    valid_press_time = get_key_hold_overlay_valid_press_time(score, mods, speed)
-    left_intervals = clip_key_hold_intervals(left_intervals, valid_press_time)
-    right_intervals = clip_key_hold_intervals(right_intervals, valid_press_time)
-    shift_time = get_key_hold_overlay_shift_time(left_intervals, right_intervals)
+    first_hitobject_time, overall_difficulty = read_beatmap_overlay_timing(
+        find_score_beatmap_path(score)
+    )
+    first_hitobject_time /= speed
+    valid_press_time = get_valid_press_time(
+        first_hitobject_time, overall_difficulty, mods
+    )
+    left_intervals = trim_key_hold_intervals(left_intervals, valid_press_time)
+    right_intervals = trim_key_hold_intervals(right_intervals, valid_press_time)
+    shift_time = first_hitobject_time - KEY_HOLD_OVERLAY_FIRST_HITOBJECT_MS
     left_intervals = clip_key_hold_intervals(left_intervals, shift_time)
     right_intervals = clip_key_hold_intervals(right_intervals, shift_time)
     if not left_intervals and not right_intervals:
         return
 
     duration = probe_media_duration(output_path, find_existing_ffprobe(ffmpeg_path))
-    source_path = output_path.with_name(f"{output_path.stem}.danser{output_path.suffix}")
+    source_path = output_path.with_name(
+        f"{output_path.stem}.danser{output_path.suffix}"
+    )
     if source_path.exists():
         source_path.unlink()
     output_path.replace(source_path)
@@ -720,9 +772,13 @@ def apply_key_hold_overlay(output_path, replay_path, score, ffmpeg_path):
 
     error = None
     with OVERLAY_LOG_PATH.open("w", encoding="utf-8", errors="replace") as log_handle:
-        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=log_handle, stderr=subprocess.STDOUT)
+        process = subprocess.Popen(
+            command, stdin=subprocess.PIPE, stdout=log_handle, stderr=subprocess.STDOUT
+        )
         try:
-            write_key_hold_overlay_frames(process.stdin, duration, left_intervals, right_intervals)
+            write_key_hold_overlay_frames(
+                process.stdin, duration, left_intervals, right_intervals
+            )
         except OSError as exc:
             error = str(exc)
         finally:
@@ -736,7 +792,9 @@ def apply_key_hold_overlay(output_path, replay_path, score, ffmpeg_path):
             output_path.unlink()
         if source_path.exists():
             source_path.replace(output_path)
-        fail(error or f"Overlay output was not created.\nOverlay log: {OVERLAY_LOG_PATH}")
+        fail(
+            error or f"Overlay output was not created.\nOverlay log: {OVERLAY_LOG_PATH}"
+        )
 
     source_path.unlink()
 
@@ -753,7 +811,16 @@ def find_existing_ffprobe(ffmpeg_path):
 
 def probe_media_duration(path, ffprobe_path):
     result = subprocess.run(
-        [str(ffprobe_path), "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)],
+        [
+            str(ffprobe_path),
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "json",
+            str(path),
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -812,25 +879,18 @@ def parse_key_hold_intervals(replay_path, speed):
     return left_intervals, right_intervals
 
 
-def get_key_hold_overlay_shift_time(left_intervals, right_intervals):
-    all_intervals = left_intervals + right_intervals
-    if not all_intervals:
-        return 0
-    first_press = min(start for start, _ in all_intervals)
-    return first_press - KEY_HOLD_OVERLAY_FIRST_PRESS_MS
-
-
-def get_key_hold_overlay_valid_press_time(score, mods, speed):
-    beatmap_path = find_score_beatmap_path(score)
-    first_hitobject_time, overall_difficulty = read_beatmap_overlay_timing(beatmap_path)
-    return get_valid_press_time(first_hitobject_time / speed, overall_difficulty, mods)
-
-
 def find_score_beatmap_path(score):
-    songs_path = SONGS_DIR / sanitize_name(f"{score['beatmapset_id']} {score['artist']} - {score['title']}")
+    songs_path = SONGS_DIR / sanitize_name(
+        f"{score['beatmapset_id']} {score['artist']} - {score['title']}"
+    )
     for beatmap_path in songs_path.rglob("*.osu"):
-        for raw_line in beatmap_path.read_text(encoding="utf-8", errors="replace").splitlines():
-            if raw_line.startswith("BeatmapID:") and as_int(raw_line.split(":", 1)[1]) == score["beatmap_id"]:
+        for raw_line in beatmap_path.read_text(
+            encoding="utf-8", errors="replace"
+        ).splitlines():
+            if (
+                raw_line.startswith("BeatmapID:")
+                and as_int(raw_line.split(":", 1)[1]) == score["beatmap_id"]
+            ):
                 return beatmap_path
     fail(f"Could not find beatmap {score['beatmap_id']} in {songs_path}.")
 
@@ -839,7 +899,9 @@ def read_beatmap_overlay_timing(beatmap_path):
     section = ""
     overall_difficulty = 5
     first_hitobject_time = None
-    for raw_line in beatmap_path.read_text(encoding="utf-8", errors="replace").splitlines():
+    for raw_line in beatmap_path.read_text(
+        encoding="utf-8", errors="replace"
+    ).splitlines():
         line = raw_line.strip()
         if not line or line.startswith("//"):
             continue
@@ -861,7 +923,10 @@ def read_beatmap_overlay_timing(beatmap_path):
 
 def get_valid_press_time(first_hitobject_time, overall_difficulty, mods):
     hit_window_50 = get_hit_window_50(overall_difficulty, mods)
-    return max(0, int(first_hitobject_time - hit_window_50 - KEY_HOLD_OVERLAY_VALID_PRESS_PAD_MS))
+    return max(
+        0,
+        int(first_hitobject_time - hit_window_50 - KEY_HOLD_OVERLAY_VALID_PRESS_PAD_MS),
+    )
 
 
 def get_hit_window_50(overall_difficulty, mods):
@@ -895,6 +960,15 @@ def clip_key_hold_intervals(intervals, start_time):
     return clipped
 
 
+def trim_key_hold_intervals(intervals, start_time):
+    trimmed = []
+    for start, end in intervals:
+        if end <= start_time:
+            continue
+        trimmed.append((max(start, start_time), end))
+    return trimmed
+
+
 def read_replay_data(replay_path):
     data = replay_path.read_bytes()
     offset = 1 + 4
@@ -905,7 +979,9 @@ def read_replay_data(replay_path):
     offset += 8
     replay_length = struct.unpack_from("<i", data, offset)[0]
     offset += 4
-    return lzma.decompress(data[offset:offset + replay_length]).decode("utf-8", errors="replace")
+    return lzma.decompress(data[offset : offset + replay_length]).decode(
+        "utf-8", errors="replace"
+    )
 
 
 def read_replay_mods(replay_path):
@@ -925,7 +1001,7 @@ def read_osu_string(data, offset):
     if marker != 0x0B:
         fail(f"Unexpected osu! string marker: {marker}")
     length, offset = read_uleb128(data, offset)
-    value = data[offset:offset + length].decode("utf-8", errors="replace")
+    value = data[offset : offset + length].decode("utf-8", errors="replace")
     return value, offset + length
 
 
@@ -948,7 +1024,11 @@ def write_key_hold_overlay_frames(pipe, duration, left_intervals, right_interval
 
     for frame_index in range(frame_count):
         frame_time = frame_index * frame_time_step
-        pipe.write(build_key_hold_overlay_frame(base_frame, frame_time, left_intervals, right_intervals))
+        pipe.write(
+            build_key_hold_overlay_frame(
+                base_frame, frame_time, left_intervals, right_intervals
+            )
+        )
 
 
 def create_key_hold_overlay_base():
@@ -958,16 +1038,39 @@ def create_key_hold_overlay_base():
     return bytes(frame)
 
 
-def build_key_hold_overlay_frame(base_frame, frame_time, left_intervals, right_intervals):
+def build_key_hold_overlay_frame(
+    base_frame, frame_time, left_intervals, right_intervals
+):
     frame = bytearray(base_frame)
-    draw_key_hold_lane(frame, KEY_HOLD_OVERLAY_ROW_TOPS[0], "Z", KEY_HOLD_OVERLAY_LEFT_BAR, left_intervals, frame_time)
-    draw_key_hold_lane(frame, KEY_HOLD_OVERLAY_ROW_TOPS[1], "X", KEY_HOLD_OVERLAY_RIGHT_BAR, right_intervals, frame_time)
+    draw_key_hold_lane(
+        frame,
+        KEY_HOLD_OVERLAY_ROW_TOPS[0],
+        "Z",
+        KEY_HOLD_OVERLAY_LEFT_BAR,
+        left_intervals,
+        frame_time,
+    )
+    draw_key_hold_lane(
+        frame,
+        KEY_HOLD_OVERLAY_ROW_TOPS[1],
+        "X",
+        KEY_HOLD_OVERLAY_RIGHT_BAR,
+        right_intervals,
+        frame_time,
+    )
     return frame
 
 
 def draw_key_hold_lane_base(frame, top, label):
     key_left = KEY_HOLD_OVERLAY_WIDTH - KEY_HOLD_OVERLAY_KEY_WIDTH
-    fill_rect(frame, key_left, top, KEY_HOLD_OVERLAY_KEY_WIDTH, KEY_HOLD_OVERLAY_KEY_HEIGHT, KEY_HOLD_OVERLAY_KEY_IDLE)
+    fill_rect(
+        frame,
+        key_left,
+        top,
+        KEY_HOLD_OVERLAY_KEY_WIDTH,
+        KEY_HOLD_OVERLAY_KEY_HEIGHT,
+        KEY_HOLD_OVERLAY_KEY_IDLE,
+    )
     draw_glyph(frame, key_left + 8, top + 3, label, KEY_HOLD_OVERLAY_TEXT, 3)
 
 
@@ -985,14 +1088,25 @@ def draw_key_hold_lane(frame, top, label, color, intervals, frame_time):
             continue
         if start <= frame_time < end:
             active = True
-        draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_time, start, end)
+        draw_key_hold_note(
+            frame, track_left, track_right, track_top, color, frame_time, start, end
+        )
 
     if active:
-        fill_rect(frame, key_left, top, KEY_HOLD_OVERLAY_KEY_WIDTH, KEY_HOLD_OVERLAY_KEY_HEIGHT, color)
+        fill_rect(
+            frame,
+            key_left,
+            top,
+            KEY_HOLD_OVERLAY_KEY_WIDTH,
+            KEY_HOLD_OVERLAY_KEY_HEIGHT,
+            color,
+        )
         draw_glyph(frame, key_left + 8, top + 3, label, KEY_HOLD_OVERLAY_TEXT, 3)
 
 
-def draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_time, start, end):
+def draw_key_hold_note(
+    frame, track_left, track_right, track_top, color, frame_time, start, end
+):
     px_per_ms = KEY_HOLD_OVERLAY_TRACK_WIDTH / KEY_HOLD_OVERLAY_TRAVEL_MS
     left = int(track_right - (frame_time - start) * px_per_ms)
     right_time = end if frame_time >= end else frame_time
@@ -1011,14 +1125,23 @@ def draw_key_hold_note(frame, track_left, track_right, track_top, color, frame_t
             int(color[2] * fade),
             color[3],
         )
-    fill_rect(frame, left, track_top, right - left, KEY_HOLD_OVERLAY_TRACK_HEIGHT, color)
+    fill_rect(
+        frame, left, track_top, right - left, KEY_HOLD_OVERLAY_TRACK_HEIGHT, color
+    )
 
 
 def draw_glyph(frame, x, y, glyph, color, scale):
     for row_index, row in enumerate(KEY_HOLD_OVERLAY_FONT[glyph]):
         for col_index, cell in enumerate(row):
             if cell == "1":
-                fill_rect(frame, x + col_index * scale, y + row_index * scale, scale, scale, color)
+                fill_rect(
+                    frame,
+                    x + col_index * scale,
+                    y + row_index * scale,
+                    scale,
+                    scale,
+                    color,
+                )
 
 
 def fill_rect(frame, x, y, width, height, color):
@@ -1026,7 +1149,7 @@ def fill_rect(frame, x, y, width, height, color):
     row = bytes(color) * width
     for row_index in range(y, y + height):
         start = row_index * stride + x * 4
-        frame[start:start + len(row)] = row
+        frame[start : start + len(row)] = row
 
 
 def fetch_json(url, *, headers=None, data=None):
@@ -1041,7 +1164,12 @@ def fetch_json(url, *, headers=None, data=None):
         raw_data = json.dumps(data).encode("utf-8")
         request_headers["Content-Type"] = "application/json"
 
-    request = urllib.request.Request(url, headers=request_headers, data=raw_data, method="POST" if raw_data else "GET")
+    request = urllib.request.Request(
+        url,
+        headers=request_headers,
+        data=raw_data,
+        method="POST" if raw_data else "GET",
+    )
     try:
         with urllib.request.urlopen(request) as response:
             charset = response.headers.get_content_charset("utf-8")
@@ -1085,7 +1213,9 @@ def download_to_file(url, destination, *, headers, accepted_content_types):
 
 def content_type_matches(content_type, accepted):
     normalized = content_type.lower().strip()
-    return any(normalized == value or normalized.startswith(f"{value};") for value in accepted)
+    return any(
+        normalized == value or normalized.startswith(f"{value};") for value in accepted
+    )
 
 
 def build_official_beatmap_download_url(score, include_video):
@@ -1172,6 +1302,7 @@ def as_bool(value):
 def fail(message):
     print(message, file=sys.stderr)
     raise SystemExit(1)
+
 
 if __name__ == "__main__":
     sys.exit(main())
